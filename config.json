@@ -1,0 +1,50 @@
+{
+    "name": "AMSMNet",
+    "n_gpu": 3,
+    
+    "arch": {
+        "type": "AMSMNetModel",
+        "args": {}
+    },
+    "data_loader": {
+        "type": "AMSMNetDataLoader",
+        "args":{
+            "data_dir": "/1/Datasets/adobe",
+            "batch_size": 4,
+            "shuffle": true,
+            "validation_split": 0.1,
+            "num_workers": 2
+        }
+    },
+    "optimizer": {
+        "type": "Adam",
+        "args":{
+            "lr": 0.00001,
+            "weight_decay": 0,
+            "amsgrad": true
+        }
+    },
+    "loss": "nll_loss",
+    "metrics": [
+        "my_metric", "my_metric2"
+    ],
+    "lr_scheduler": {
+        "type": "StepLR",
+        "args": {
+            "step_size": 50,
+            "gamma": 0.1
+        }
+    },
+    "trainer": {
+        "epochs": 100,
+        "save_dir": "saved/",
+        "save_period": 1,
+        "verbosity": 2,
+        
+        "monitor": "min val_loss",
+        "early_stop": 10,
+        
+        "tensorboardX": true,
+        "log_dir": "saved/runs"
+    }
+}
