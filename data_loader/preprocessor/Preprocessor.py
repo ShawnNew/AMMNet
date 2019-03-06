@@ -12,9 +12,9 @@ class Preprocessor:
     random_crop_list_ = [320, 480, 640]
     flip_list_ = [True, False]
     # class constructor
-    def __init__(self, root, shuffle=False):
+    def __init__(self, root, val=0, shuffle=False):
         self.root_dir_ = root
-        self.shuffle = shuffle
+        # self.shuffle = shuffle
 
         _dict = {}
         for item in os.listdir(self.root_dir_):
@@ -35,12 +35,16 @@ class Preprocessor:
 
         total_num = small_count
         file_list = self.dataset_dict[small_folder]
-        self.len_train = total_num - 100
-        self.len_test = 100
+        self.len_val = total_num // 100 * val
+        self.len_test = 200                 # 200 test images
+        self.len_train = total_num - self.len_test - self.len_val
 
-        if self.shuffle:
+        if shuffle:
             random.shuffle(file_list)
-            self.splitTrainTest(file_list)
+            if val == 0:
+                self.splitTrainTest(file_list)
+            else:
+                self.splitTrainTestVal(file_list)
 
     def splitTrainTest(self, file_list):
         """
@@ -51,12 +55,26 @@ class Preprocessor:
         train_file = os.path.join(self.root_dir_, 'train.txt')
         test_file = os.path.join(self.root_dir_, 'test.txt')
         writeDataSetFile(self.dataset_dict, [train_file, test_file], split_list)
+    
+    def splitTrainTestVal(self, file_list):
+        split_list = [
+            file_list[:self.len_train], 
+            file_list[self.len_train:self.len_train+self.len_test],
+            file_list[self.len_test+self.len_train:]
+        ]
+        train_file = os.path.join(self.root_dir_, 'train.txt')
+        test_file = os.path.join(self.root_dir_, 'test.txt')
+        val_file = os.path.join(self.root_dir_, 'val.txt')
+        writeDataSetFile(self.dataset_dict, [train_file, test_file, val_file], split_list)
 
     def getTrainFile(self):
         return os.path.join(self.root_dir_, 'train.txt')
 
     def getTestFile(self):
         return os.path.join(self.root_dir_, 'test.txt')
+    
+    def getValFile(self):
+        return os.path.join(self.root_dir_, 'val.txt')
 
 
 def getFileList(base, sub):
