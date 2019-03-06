@@ -1,71 +1,114 @@
 import os
-import h5py
 import cv2 as cv
 import numpy as np
 import random
-from scipy import misc as misc
+from scipy.misc import imresize
+from PIL import Image
 import math
+# from torchvision import transforms
+import torch
 import pdb
 
-def writeH5Files(samples_array, file_path):
-    """
-    Write the formatted data into hdf5 file from img_array
-    """
-    dir_, _ = os.path.split(file_path)
-    if not os.path.exists(dir_): os.mkdir(dir_)
-    hdf_file = h5py.File(file_path, 'w')
-    img = samples_array[:,:3,:,:]
-    img_scale1 = scale_by_factor(img, 0.5)
-    img_scale2 = scale_by_factor(img, 0.25)
-    tri_map = np.expand_dims(samples_array[:,3,:,:], axis=1)
-    gt = np.expand_dims(samples_array[:, 4, :, :], axis=1)
-    #fg = samples_array[:, 5:8, :, :]
-    #bg = samples_array[:, 8:11, :, :]
-    gradient = np.expand_dims(samples_array[:, 11, :, :], axis=1)
-    #roughness = np.expand_dims(samples_array[:, 12, :, :], axis=1)
-    tri_map_original = np.expand_dims(samples_array[:,13, :, :], axis=1)
-    hdf_file['img'] = img
-    hdf_file['img-scale1'] = img_scale1
-    hdf_file['img-scale2'] = img_scale2
-    hdf_file['tri-map'] = tri_map
-    hdf_file['gt'] = gt
-    #hdf_file['fg'] = fg
-    #hdf_file['bg'] = bg
-    hdf_file['gradient'] = gradient
-    #hdf_file['roughness'] = roughness
-    hdf_file['tri-map-origin'] = tri_map_original
-    hdf_file.flush()
-    hdf_file.close()
 
-def scale_by_factor(data, scale):
-    res = np.zeros((data.shape[0], data.shape[1], int(data.shape[2]*scale), int(data.shape[3]*scale)))
-    for i in range(len(data)):
-        img = data[i]
-        img = np.transpose(img, (1,2,0))
-        scale_ = cv.resize(img, (0,0), fx=scale, fy=scale)
-        scale_ = np.transpose(scale_, (2,0,1))
-        res[i] = scale_
-    return res
+class MultiRescale(object):
+    """MultiScale the input image in a sample by given scales.
 
-def writeH5TxtFile(_dir):
+    Args:
+        scales_list (tuple or int): Desired output scale list. 
     """
-    Generate a txt file that list all the HDF5 files of the dataset.
-    Param:
-        out_dir: the output directory
-        h5dir:   the hdf5 dataset directory
+    def __init__(self, scales_list):
+        assert isinstance(scales_list, list)
+        self.scales_list = scales_list
+
+    def __call__(self, sample):
+        multi_scale_sample = {}
+        multi_scale_sample['gt'] = sample['gt']
+        multi_scale_sample['trimap'] = sample['trimap']
+        multi_scale_sample['gradient'] = sample['gradient']
+        i = 1
+        for scale in self.scales_list:
+            if scale == 1:
+                img = sample['image']
+            else:
+                img = Image.fromarray(imresize(sample['image'], scale))
+            img_name = 'image-scale' + str(i)
+            multi_scale_sample[img_name] = img
+            i += 1
+        return multi_scale_sample
+
+
+
+class RandomCrop(object):
+    """Crop the images randomly in a sample.
+
+    Args:
+        output_size (tuple or int): Desired output size. If int, square crop is made.
     """
-    for file_ in os.listdir(_dir):
-        if os.path.isdir(os.path.join(_dir, file_)):
-            txt_filename = file_ + ".txt"
-            txt_path = os.path.join(_dir, txt_filename)
-            with open(txt_path, 'w') as f:
-                sub_dir = os.path.join(_dir, file_)
-                for i in os.listdir(sub_dir):
-                    if i.endswith(".h5"):
-                        path = os.path.abspath(sub_dir)
-                        path = os.path.join(path, i)
-                        line_ = path + "\n"
-                        f.write(line_)
+    random_crop_list = [320, 480, 640]
+    def __init__(self, output_size):
+        assert isinstance(output_size, (int, tuple))
+        if isinstance(output_size, int):
+            self.output_size = (output_size, output_size)
+        else:
+            assert len(output_size) == 2
+            self.output_size = output_size
+
+    def __call__(self, sample):
+        random_crop_size = random.choice(self.random_crop_list)
+        img, gt, trimap, grad = sample['image'], sample['gt'], sample['trimap'], sample['gradient']
+        # crop along unknown region
+        img_ = np.asarray(img)
+        gt_ = np.asarray(gt)
+        trimap_ = np.asarray(trimap)
+        grad_ = np.asarray(grad)
+        h_start = h_end = w_start = w_end = 0
+        if (min(trimap_.shape) < random_crop_size):
+            h_start = w_start = 0
+            h_end = w_end = min(trimap_.shape)
+        else:
+            h_start, h_end, w_start, w_end = validUnknownRegion(trimap_, random_crop_size)
+        img_ = img_[h_start:h_end, w_start:w_end, :]
+        trimap_ = trimap_[h_start:h_end, w_start:w_end]
+        gt_ = gt_[h_start:h_end, w_start:w_end]
+        grad_ = grad_[h_start:h_end, w_start:w_end]
+        
+        # resize
+        img = imresize(img_, self.output_size)
+        trimap = imresize(trimap_, self.output_size)
+        gt = imresize(gt_, self.output_size)
+        grad = imresize(grad_, self.output_size)
+        cropped_sample = {
+            'image': Image.fromarray(img), 
+            'gt': Image.fromarray(gt),
+            'trimap': Image.fromarray(trimap),
+            'gradient': Image.fromarray(grad)
+        }
+        return cropped_sample
+
+
+class MultiToTensor(object):
+    def __init__(self, scale):
+        self.scale = scale
+    def __call__(self, sample):
+        gt, trimap, grad = sample['gt'], sample['trimap'], sample['gradient']
+        img_scale1 = sample['image-scale1']
+        img_scale2 = sample['image-scale2']
+        img_scale3 = sample['image-scale3']
+        img_scale1 = np.transpose(np.asarray(img_scale1), (2, 0, 1))
+        img_scale2 = np.transpose(np.asarray(img_scale2), (2, 0, 1))
+        img_scale3 = np.transpose(np.asarray(img_scale3), (2, 0, 1))
+        gt = np.expand_dims(np.asarray(gt), axis=0)
+        trimap = np.expand_dims(np.asarray(trimap), axis=0)
+        grad = np.expand_dims(np.asarray(grad), axis=0)
+        return {
+            'image-scale1': torch.from_numpy(img_scale1 * self.scale),
+            'image-scale2': torch.from_numpy(img_scale2 * self.scale),
+            'image-scale3': torch.from_numpy(img_scale3 * self.scale),
+            'gt': torch.from_numpy(gt * self.scale),
+            'trimap': torch.from_numpy(trimap * self.scale),
+            'gradient': torch.from_numpy(grad * self.scale)
+        }
+        
 
 
 def getFileList(base, sub):
@@ -142,86 +185,3 @@ def validUnknownRegion(img, output_size):
         h_end = h_start + 640
         w_end = w_start + 640
     return h_start, h_end, w_start, w_end
-
-
-def batch_resize_by_scale(img, scale, channels):
-    '''
-    :param img: The input image, should be shape like [:,:,channels]
-    :param deter_h: The picture height as you wish to resize to
-    :param deter_w: The picture width as you wish to resize to
-    :return: A vector with shape [deter_h, deter_w, channels]
-    '''
-    shape_ = img.shape
-    image = np.zeros([shape_[0]*int(scale), shape_[1]*int(scale), channels])
-    # try:
-    image[:, :, :3] = cv.resize(img[:, :, :3],
-                                None, fx=scale,
-                                fy=scale,
-                                interpolation=cv.INTER_CUBIC).astype(np.float64)
-    image[:, :, 3] = cv.resize(img[:, :, 3],
-                               None, fx=scale,
-                               fy=scale,
-                               interpolation=cv.INTER_CUBIC).astype(np.float64)
-    image[:, :, 4] = cv.resize(img[:, :, 4],
-                               None, fx=scale,
-                               fy=scale,
-                               interpolation=cv.INTER_CUBIC).astype(np.float64)
-    image[:, :, 5:8] = cv.resize(img[:, :, 5:8],
-                                 None, fx=scale,
-                                 fy=scale,
-                                 interpolation=cv.INTER_CUBIC).astype(np.float64)
-    image[:, :, 8:11] = cv.resize(img[:, :, 8:11],
-                                  None, fx=scale,
-                                  fy=scale,
-                                  interpolation=cv.INTER_CUBIC).astype(np.float64)
-    image[:, :, 11] = cv.resize(img[:, :, 11],
-                                None, fx=scale,
-                                fy=scale,
-                                interpolation=cv.INTER_CUBIC).astype(np.float64)
-    image[:, :, 12] = cv.resize(img[:, :, 12],
-                                None, fx=scale,
-                                fy=scale,
-                                interpolation=cv.INTER_CUBIC).astype(np.float64)
-    image[:,:,13] = cv.resize(img[:,:,13],
-                              None, fx=scale,
-                              fy=scale,
-                              interpolation=cv.INTER_CUBIC).astype(np.float64)
-    return image
-
-def batch_resize(img, deter_h, deter_w, channels):
-    '''
-    :param img: The input image, should be shape like [:,:,channels]
-    :param deter_h: The picture height as you wish to resize to
-    :param deter_w: The picture width as you wish to resize to
-    :return: A vector with shape [deter_h, deter_w, channels]
-    '''
-    image = np.zeros([deter_h, deter_w, channels])
-    # try:
-    image[:, :, :3] = cv.resize(img[:, :, :3],
-                                (deter_w, deter_h),
-                                interpolation=cv.INTER_CUBIC).astype(np.float64)
-    image[:, :, 3] = cv.resize(img[:, :, 3],
-                               (deter_w, deter_h),
-                               interpolation=cv.INTER_CUBIC).astype(np.float64)
-    image[:, :, 4] = cv.resize(img[:, :, 4],
-                               (deter_w, deter_h),
-                               interpolation=cv.INTER_CUBIC).astype(np.float64)
-    image[:, :, 5:8] = cv.resize(img[:, :, 5:8],
-                                 (deter_w, deter_h),
-                                 interpolation=cv.INTER_CUBIC).astype(np.float64)
-    image[:, :, 8:11] = cv.resize(img[:, :, 8:11],
-                                  (deter_w, deter_h),
-                                  interpolation=cv.INTER_CUBIC).astype(np.float64)
-    image[:, :, 11] = cv.resize(img[:, :, 11],
-                                (deter_w, deter_h),
-                                interpolation=cv.INTER_CUBIC).astype(np.float64)
-    image[:, :, 12] = cv.resize(img[:, :, 12],
-                                (deter_w, deter_h),
-                                interpolation=cv.INTER_CUBIC).astype(np.float64)
-    image[:, :, 13] = cv.resize(img[:, :, 13],
-                                (deter_w, deter_h),
-                                interpolation=cv.INTER_CUBIC).astype(np.float64)
-    return image
-
-
-
