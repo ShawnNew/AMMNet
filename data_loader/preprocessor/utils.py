@@ -87,6 +87,8 @@ class RandomCrop(object):
 
 
 class MultiToTensor(object):
+    def __init__(self, scale):
+        self.scale = scale
     def __call__(self, sample):
         gt, trimap, grad = sample['gt'], sample['trimap'], sample['gradient']
         img_scale1 = sample['image-scale1']
@@ -99,19 +101,14 @@ class MultiToTensor(object):
         trimap = np.expand_dims(np.asarray(trimap), axis=0)
         grad = np.expand_dims(np.asarray(grad), axis=0)
         return {
-            'image-scale1': torch.from_numpy(img_scale1),
-            'image-scale2': torch.from_numpy(img_scale2),
-            'image-scale3': torch.from_numpy(img_scale3),
-            'gt': torch.from_numpy(gt),
-            'trimap': torch.from_numpy(trimap),
-            'gradient': torch.from_numpy(grad)
+            'image-scale1': torch.from_numpy(img_scale1 * self.scale),
+            'image-scale2': torch.from_numpy(img_scale2 * self.scale),
+            'image-scale3': torch.from_numpy(img_scale3 * self.scale),
+            'gt': torch.from_numpy(gt * self.scale),
+            'trimap': torch.from_numpy(trimap * self.scale),
+            'gradient': torch.from_numpy(grad * self.scale)
         }
         
-class MultiNormalize(object):
-    def __init__(self, mean, std):
-        pass
-    def __call__(self, sample):
-        pass
 
 
 def getFileList(base, sub):

@@ -1,7 +1,7 @@
 from torchvision import transforms
 from base import BaseDataLoader
 from create_dataset import adobeDataset
-from preprocessor.utils import MultiRescale, RandomCrop, MultiToTensor, MultiNormalize
+from preprocessor.utils import MultiRescale, RandomCrop, MultiToTensor
 
 
 
@@ -13,7 +13,7 @@ class AMSMNetDataLoader(BaseDataLoader):
         trsfm = transforms.Compose([
             RandomCrop(224),
             MultiRescale([1, 0.5, 0.25]),
-            MultiToTensor()
+            MultiToTensor(1 / 255)   # scale to [0, 1]
             ])
         self.data_dir = data_dir
         self.dataset = adobeDataset(self.data_dir, train=training, transform=trsfm)
