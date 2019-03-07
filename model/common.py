@@ -63,18 +63,20 @@ class PreResBlock(nn.Module):
         bias=True, bn=False, act=nn.ReLU(True), res_scale=1):
 
         super(PreResBlock, self).__init__()
-        m = []
-        for i in range(2):
-            m.append(conv(in_channels, out_channels, kernel_size, bias=bias))
-            if bn:
-                m.append(nn.BatchNorm2d(out_channels))
-            if i == 0:
-                m.append(act)
-        self.body = nn.Sequential(*m)
+        m_1 = []
+        m_1.append(conv(in_channels, out_channels, kernel_size, bias=bias))
+        m_1.append(nn.BatchNorm2d(out_channels))
+        m_1.append(act)
+        m_2 = []
+        m_2.append(conv(out_channels, out_channels, kernel_size, bias=bias))
+        m_2.append(nn.BatchNorm2d(out_channels))
+        self.body_1 = nn.Sequential(*m_1)
+        self.body_2 = nn.Sequential(*m_2)
         self.res_scale = res_scale
 
     def forward(self, x):
-        res = self.body(x).mul(self.res_scale)
+        x = self.body_1(x)
+        res = self.body_2(x).mul(self.res_scale)
         res += x
         return res
 

@@ -51,16 +51,23 @@ class AMSMNetModel(BaseModel):
         self.upsample = common.Upsampler(conv, intermediate_channels, bn=False, act=False)
 
         # tail to output prediction
-        _tail = [conv(intermediate_channels, 1, kernel_size)]
+        _tail = [common.BasicBlock(conv, intermediate_channels, 3, kernel_size)]
+
+        _output = nn.ModuleList([
+            conv(3, 1, 3),
+            nn.Sigmoid()
+        ])
+
 
         self.head = nn.Sequential(*_head)
         self.body = nn.Sequential(*_body)
         self.tail = nn.Sequential(*_tail)
+        self.output = nn.Sequential(*_output)
 
     def forward(self, x_scale1, x_scale2, x_scale3):
         ## --------- scale3(smallest)
         x_scale3 = self.sub_mean(x_scale3)
-        x_scale3 = self.head(x_scale1)
+        x_scale3 = self.head(x_scale3)
         x_scale3 = self.pre_process[2](x_scale3)
 
         res_scale3 = self.body(x_scale3)
@@ -92,5 +99,6 @@ class AMSMNetModel(BaseModel):
 
         x = self.tail(res_scale1)
         x = self.add_mean(x)
+        x = self.output(x)
 
         return x
