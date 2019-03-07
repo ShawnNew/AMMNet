@@ -48,10 +48,17 @@ class Trainer(BaseTrainer):
     
         total_loss = 0
         total_metrics = np.zeros(len(self.metrics))
-        for batch_idx, (data, target) in enumerate(self.data_loader):
-            data, target = data.to(self.device), target.to(self.device)
+        for batch_idx, sample_batched in enumerate(self.data_loader):
+            img_scale1 = sample_batched['image-scale1'].to(self.device)
+            img_scale2 = sample_batched['image-scale2'].to(self.device)
+            img_scale3 = sample_batched['image-scale3'].to(self.device)
+            gt = sample_batched['gt'].to(self.device)
+            trimap = sample_batched['trimap'].to(self.device)
+            grad = sample_batched['gradient'].to(self.device)
 
             self.optimizer.zero_grad()
+            import pdb
+            pdb.set_trace()
             output = self.model(data)
             loss = self.loss(output, target)
             loss.backward()

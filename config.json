@@ -4,7 +4,13 @@
     
     "arch": {
         "type": "AMSMNetModel",
-        "args": {}
+        "args": {
+            "input_channels": 3,
+            "intermediate_channels": 64,
+            "num_resblocks": 16,
+            "default_kernel_size": 3,
+            "rgb_range": 255
+        }
     },
     "data_loader": {
         "type": "AMSMNetDataLoader",

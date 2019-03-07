@@ -7,7 +7,6 @@ from PIL import Image
 import math
 # from torchvision import transforms
 import torch
-import pdb
 
 
 class MultiRescale(object):
@@ -87,8 +86,6 @@ class RandomCrop(object):
 
 
 class MultiToTensor(object):
-    def __init__(self, scale):
-        self.scale = scale
     def __call__(self, sample):
         gt, trimap, grad = sample['gt'], sample['trimap'], sample['gradient']
         img_scale1 = sample['image-scale1']
@@ -101,12 +98,12 @@ class MultiToTensor(object):
         trimap = np.expand_dims(np.asarray(trimap), axis=0)
         grad = np.expand_dims(np.asarray(grad), axis=0)
         return {
-            'image-scale1': torch.from_numpy(img_scale1 * self.scale),
-            'image-scale2': torch.from_numpy(img_scale2 * self.scale),
-            'image-scale3': torch.from_numpy(img_scale3 * self.scale),
-            'gt': torch.from_numpy(gt * self.scale),
-            'trimap': torch.from_numpy(trimap * self.scale),
-            'gradient': torch.from_numpy(grad * self.scale)
+            'image-scale1': torch.from_numpy(img_scale1).type(torch.FloatTensor),
+            'image-scale2': torch.from_numpy(img_scale2).type(torch.FloatTensor),
+            'image-scale3': torch.from_numpy(img_scale3).type(torch.FloatTensor),
+            'gt': torch.from_numpy(gt).type(torch.FloatTensor),
+            'trimap': torch.from_numpy(trimap).type(torch.FloatTensor),
+            'gradient': torch.from_numpy(grad).type(torch.FloatTensor)
         }
         
 
