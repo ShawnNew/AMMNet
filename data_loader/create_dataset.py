@@ -2,7 +2,7 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader, TensorDataset
 import os
-from preprocessor.Preprocessor import Preprocessor
+from .preprocessor.Preprocessor import Preprocessor
 
 class adobeDataset(Dataset):
     def __init__(self, root_, train=True, transform=None, shuffle=False):

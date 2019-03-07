@@ -1,35 +1,42 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from base import BaseModel
 from model import common
 
-def made_model():
-    return AMSMNetModel()
 
 class AMSMNetModel(BaseModel):
-    def __init__(self, conv=common.default_conv):
+    def __init__(self, conv=common.default_conv, **kwargs,):
         super(AMSMNetModel, self).__init__()
         # -------------- Define model architecture here ------------
-        scale = 3
-        input_channles = 3
-        num_resblocks = 16
-        intermediate_channels = 64
-        kernel_size = 3
+        # scale = 3
+        input_channles = kwargs['input_channels']
+        num_resblocks = kwargs['num_resblocks']
+        intermediate_channels = kwargs['intermediate_channels']
+        kernel_size = kwargs['default_kernel_size']
         activation = nn.ReLU(True)
-        rgb_range = 255
+        rgb_range = kwargs['rgb_range']
         self.scale_idx = 0
         self.sub_mean = common.MeanShift(rgb_range)
         self.add_mean = common.MeanShift(rgb_range, sign=1)
 
         # head to read scaled image
-        _head = [conv(input_channles, intermediate_channels, kernel_size)]
+        _head = common.BasicBlock(conv, input_channles, intermediate_channels, kernel_size)
 
         # pre-process 2*Resblock each
         self.pre_process = nn.ModuleList([
             nn.Sequential(
+                common.PreResBlock(conv, 2*intermediate_channels, intermediate_channels, 5, bn=True, act=activation),
+                common.ResBlock(conv, intermediate_channels, 5, bn=True, act=activation)
+            ),
+            nn.Sequential(
+                common.PreResBlock(conv, 2*intermediate_channels, intermediate_channels, 5, bn=True, act=activation),
+                common.ResBlock(conv, intermediate_channels, 5, bn=True, act=activation)
+            ),
+            nn.Sequential(
                 common.ResBlock(conv, intermediate_channels, 5, bn=True, act=activation),
                 common.ResBlock(conv, intermediate_channels, 5, bn=True, act=activation)
-            ) for _ in range(scale)
+            )
         ])
 
         # body 16*Resblocks each
@@ -41,31 +48,49 @@ class AMSMNetModel(BaseModel):
         _body.append(conv(intermediate_channels, intermediate_channels, kernel_size))
 
         # upsample to enlarge the scale
-        self.upsample = nn.ModuleList([
-            common.Upsampler(conv, s, intermediate_channels, bn=False, act=False) for s in range(scale)
-        ])
+        self.upsample = common.Upsampler(conv, intermediate_channels, bn=False, act=False)
 
         # tail to output prediction
-        _tail = [conv(intermediate_channels, 1), kernel_size]
+        _tail = [conv(intermediate_channels, 1, kernel_size)]
 
         self.head = nn.Sequential(*_head)
         self.body = nn.Sequential(*_body)
         self.tail = nn.Sequential(*_tail)
 
-    def forward(self, x):
-        x = self.sub_mean(x)
-        x = self.head(x)
-        x = self.pre_process[self.scale_idx](x)
+    def forward(self, x_scale1, x_scale2, x_scale3):
+        ## --------- scale3(smallest)
+        x_scale3 = self.sub_mean(x_scale3)
+        x_scale3 = self.head(x_scale1)
+        x_scale3 = self.pre_process[2](x_scale3)
 
-        res = self.body(x)
-        res += x
+        res_scale3 = self.body(x_scale3)
+        res_scale3 += x_scale3
 
-        x = self.upsample[self.scale_idx](res)
-        x = self.tail(x)
+        x_scale3 = self.upsample(res_scale3)
+
+        ## -------- scale2
+        x_scale2 = self.sub_mean(x_scale2)
+        x_scale2 = self.head(x_scale2)
+        # concat upsampled scale
+        x_scale2 = torch.cat((x_scale3, x_scale2), dim=1)
+        x_scale2 = self.pre_process[1](x_scale2)
+
+        res_scale2 = self.body(x_scale2)
+        res_scale2 += x_scale2
+
+        x_scale2 = self.upsample(res_scale2)
+
+        ## -------- scale1
+        x_scale1 = self.sub_mean(x_scale1)
+        x_scale1 = self.head(x_scale1)
+        # concat upsampled scale
+        x_scale1 = torch.cat((x_scale1, x_scale2), dim=1)
+        x_scale1 = self.pre_process[0](x_scale1)
+
+        res_scale1 = self.body(x_scale1)
+        res_scale1 += x_scale1
+
+        x = self.tail(res_scale1)
         x = self.add_mean(x)
 
         return x
-
-    def set_scale(self, scale_idx):
-        self.scale_idx = scale_idx
-    
