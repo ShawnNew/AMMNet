@@ -37,6 +37,8 @@ class adobeDataset(Dataset):
         gt = Image.open(gt_path)             # h*w
         trimap = Image.open(trimap_path)     # h*w
         gradient = Image.open(gradient_path) # h*w
+        assert img.mode == 'RGB', "%s is not in RGB mode."% img_path
+
         sample = {
             'image': img,
             'gt': gt,

@@ -30,7 +30,7 @@
             "amsgrad": true
         }
     },
-    "loss": "nll_loss",
+    "loss": "mse_loss",
     "metrics": [
         "my_metric", "my_metric2"
     ],

@@ -17,7 +17,9 @@ class BaseTrainer:
         self.logger = logging.getLogger(self.__class__.__name__)
 
         # setup GPU device if available, move model into configured device
-        self.device, device_ids = self._prepare_device(config['n_gpu'])
+        # self.device, device_ids = self._prepare_device(config['n_gpu'])
+        self.device = 3
+        device_ids = [3]
         self.model = model.to(self.device)
         if len(device_ids) > 1:
             self.model = torch.nn.DataParallel(model, device_ids=device_ids)
