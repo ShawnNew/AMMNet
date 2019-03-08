@@ -47,7 +47,8 @@ class Trainer(BaseTrainer):
         self.model.train()
     
         total_loss = 0
-        # total_metrics = np.zeros(len(self.metrics))
+        # TODO: implement metrics
+        total_metrics = np.zeros(len(self.metrics))
         for batch_idx, sample_batched in enumerate(self.data_loader):
             img_scale1 = sample_batched['image-scale1'].to(self.device)
             img_scale2 = sample_batched['image-scale2'].to(self.device)
@@ -55,7 +56,7 @@ class Trainer(BaseTrainer):
             gt = sample_batched['gt'].to(self.device)
             trimap = sample_batched['trimap'].to(self.device)
             grad = sample_batched['gradient'].to(self.device)
-
+            
             self.optimizer.zero_grad()
             output = self.model(img_scale1, img_scale2, img_scale3)
             loss = self.loss(output, gt)
@@ -65,7 +66,7 @@ class Trainer(BaseTrainer):
             self.writer.set_step((epoch - 1) * len(self.data_loader) + batch_idx)
             self.writer.add_scalar('loss', loss.item())
             total_loss += loss.item()
-            # total_metrics += self._eval_metrics(output, gt)
+            total_metrics += self._eval_metrics(output, gt)
 
             if self.verbosity >= 2 and batch_idx % self.log_step == 0:
                 self.logger.info('Train Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
@@ -75,13 +76,13 @@ class Trainer(BaseTrainer):
                     100.0 * batch_idx / len(self.data_loader),
                     loss.item()))
                 self.writer.add_image('input', make_grid(img_scale1.cpu(), nrow=8, normalize=True))
+                self.writer.add_image('gt', make_grid(gt.cpu(), nrow=8, normalize=True))
+                self.writer.add_image('output', make_grid(output.cpu(), nrow=8, normalize=True))
+                
 
-        # log = {
-        #     'loss': total_loss / len(self.data_loader),
-        #     'metrics': (total_metrics / len(self.data_loader)).tolist()
-        # }
         log = {
-            'loss': total_loss / len(self.data_loader)
+            'loss': total_loss / len(self.data_loader),
+            'metrics': (total_metrics / len(self.data_loader)).tolist()
         }
 
         if self.do_validation:
@@ -104,19 +105,25 @@ class Trainer(BaseTrainer):
         """
         self.model.eval()
         total_val_loss = 0
+        # TODO: implement metrics
         total_val_metrics = np.zeros(len(self.metrics))
         with torch.no_grad():
-            for batch_idx, (data, target) in enumerate(self.valid_data_loader):
-                data, target = data.to(self.device), target.to(self.device)
+            for batch_idx, sample_batched in enumerate(self.valid_data_loader):
+                img_scale1 = sample_batched['image-scale1'].to(self.device)
+                img_scale2 = sample_batched['image-scale2'].to(self.device)
+                img_scale3 = sample_batched['image-scale3'].to(self.device)
+                gt = sample_batched['gt'].to(self.device)
 
-                output = self.model(data)
-                loss = self.loss(output, target)
+                output = self.model(img_scale1, img_scale2, img_scale3)
+                loss = self.loss(output, gt)
 
                 self.writer.set_step((epoch - 1) * len(self.valid_data_loader) + batch_idx, 'valid')
                 self.writer.add_scalar('loss', loss.item())
                 total_val_loss += loss.item()
-                total_val_metrics += self._eval_metrics(output, target)
-                self.writer.add_image('input', make_grid(data.cpu(), nrow=8, normalize=True))
+                total_val_metrics += self._eval_metrics(output, gt)
+                self.writer.add_image('input', make_grid(img_scale1.cpu(), nrow=8, normalize=True))
+                self.writer.add_image('gt', make_grid(gt.cpu(), nrow=8, normalize=True))
+                self.writer.add_image('output', make_grid(output.cpu(), nrow=8, normalize=True))
 
         return {
             'val_loss': total_val_loss / len(self.valid_data_loader),

@@ -66,7 +66,9 @@ class AMSMNetModel(BaseModel):
 
     def forward(self, x_scale1, x_scale2, x_scale3):
         ## --------- scale3(smallest)
-        x_scale3 = self.sub_mean(x_scale3)
+        #import pdb
+        #pdb.set_trace()
+        #x_scale3 = self.sub_mean(x_scale3)
         x_scale3 = self.head(x_scale3)
         x_scale3 = self.pre_process[2](x_scale3)
 
@@ -76,7 +78,7 @@ class AMSMNetModel(BaseModel):
         x_scale3 = self.upsample(res_scale3)
 
         ## -------- scale2
-        x_scale2 = self.sub_mean(x_scale2)
+        #x_scale2 = self.sub_mean(x_scale2)
         x_scale2 = self.head(x_scale2)
         # concat upsampled scale
         x_scale2 = torch.cat((x_scale3, x_scale2), dim=1)
@@ -88,7 +90,7 @@ class AMSMNetModel(BaseModel):
         x_scale2 = self.upsample(res_scale2)
 
         ## -------- scale1
-        x_scale1 = self.sub_mean(x_scale1)
+        #x_scale1 = self.sub_mean(x_scale1)
         x_scale1 = self.head(x_scale1)
         # concat upsampled scale
         x_scale1 = torch.cat((x_scale1, x_scale2), dim=1)
@@ -98,7 +100,7 @@ class AMSMNetModel(BaseModel):
         res_scale1 += x_scale1
 
         x = self.tail(res_scale1)
-        x = self.add_mean(x)
+        #x = self.add_mean(x)
         x = self.output(x)
 
         return x

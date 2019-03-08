@@ -91,12 +91,12 @@ class MultiToTensor(object):
         img_scale1 = sample['image-scale1']
         img_scale2 = sample['image-scale2']
         img_scale3 = sample['image-scale3']
-        img_scale1 = np.transpose(np.asarray(img_scale1), (2, 0, 1))
-        img_scale2 = np.transpose(np.asarray(img_scale2), (2, 0, 1))
-        img_scale3 = np.transpose(np.asarray(img_scale3), (2, 0, 1))
-        gt = np.expand_dims(np.asarray(gt), axis=0)
-        trimap = np.expand_dims(np.asarray(trimap), axis=0)
-        grad = np.expand_dims(np.asarray(grad), axis=0)
+        img_scale1 = np.transpose(np.asarray(img_scale1), (2, 0, 1)) / 255.
+        img_scale2 = np.transpose(np.asarray(img_scale2), (2, 0, 1)) / 255.
+        img_scale3 = np.transpose(np.asarray(img_scale3), (2, 0, 1)) / 255.
+        gt = np.expand_dims(np.asarray(gt), axis=0) / 255.
+        trimap = np.expand_dims(np.asarray(trimap), axis=0) / 255.
+        grad = np.expand_dims(np.asarray(grad), axis=0) / 255.
         return {
             'image-scale1': torch.from_numpy(img_scale1).type(torch.FloatTensor),
             'image-scale2': torch.from_numpy(img_scale2).type(torch.FloatTensor),
