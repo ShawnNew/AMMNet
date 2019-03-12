@@ -54,8 +54,8 @@ class Trainer(BaseTrainer):
             img_scale2 = sample_batched['image-scale2'].to(self.device)
             img_scale3 = sample_batched['image-scale3'].to(self.device)
             gt = sample_batched['gt'].to(self.device)
-            trimap = sample_batched['trimap'].to(self.device)
-            grad = sample_batched['gradient'].to(self.device)
+            # trimap = sample_batched['trimap'].to(self.device)
+            # grad = sample_batched['gradient'].to(self.device)
             
             self.optimizer.zero_grad()
             output = self.model(img_scale1, img_scale2, img_scale3)
@@ -75,9 +75,9 @@ class Trainer(BaseTrainer):
                     self.data_loader.n_samples,
                     100.0 * batch_idx / len(self.data_loader),
                     loss.item()))
-                self.writer.add_image('input', make_grid(img_scale1.cpu(), nrow=8, normalize=True))
-                self.writer.add_image('gt', make_grid(gt.cpu(), nrow=8, normalize=True))
-                self.writer.add_image('output', make_grid(output.cpu(), nrow=8, normalize=True))
+                self.writer.add_image('input', make_grid(img_scale1.cpu(), nrow=2, normalize=True))
+                self.writer.add_image('gt', make_grid(gt.cpu(), nrow=2, normalize=True))
+                self.writer.add_image('output', make_grid(output.cpu(), nrow=2, normalize=True))
                 
 
         log = {
@@ -121,9 +121,9 @@ class Trainer(BaseTrainer):
                 self.writer.add_scalar('loss', loss.item())
                 total_val_loss += loss.item()
                 total_val_metrics += self._eval_metrics(output, gt)
-                self.writer.add_image('input', make_grid(img_scale1.cpu(), nrow=8, normalize=True))
-                self.writer.add_image('gt', make_grid(gt.cpu(), nrow=8, normalize=True))
-                self.writer.add_image('output', make_grid(output.cpu(), nrow=8, normalize=True))
+                self.writer.add_image('input', make_grid(img_scale1.cpu(), nrow=2, normalize=True))
+                self.writer.add_image('gt', make_grid(gt.cpu(), nrow=2, normalize=True))
+                self.writer.add_image('output', make_grid(output.cpu(), nrow=2, normalize=True))
 
         return {
             'val_loss': total_val_loss / len(self.valid_data_loader),
