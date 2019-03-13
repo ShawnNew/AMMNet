@@ -11,9 +11,9 @@ class Trainer(BaseTrainer):
     Note:
         Inherited from BaseTrainer.
     """
-    def __init__(self, model, loss, metrics, optimizer, resume, config,
+    def __init__(self, model, loss, content_loss, metrics, optimizer, resume, config,
                  data_loader, valid_data_loader=None, lr_scheduler=None, train_logger=None):
-        super(Trainer, self).__init__(model, loss, metrics, optimizer, resume, config, train_logger)
+        super(Trainer, self).__init__(model, loss, content_loss, metrics, optimizer, resume, config, train_logger)
         self.config = config
         self.data_loader = data_loader
         self.valid_data_loader = valid_data_loader
@@ -59,7 +59,13 @@ class Trainer(BaseTrainer):
             
             self.optimizer.zero_grad()
             output = self.model(img_scale1, img_scale2, img_scale3)
-            loss = self.loss(output, gt)
+            pred_object = img_scale1 * output
+            gt_object = img_scale1 * gt
+            content_loss_ = self.content_loss(pred_object, gt_object)
+            mse_loss_ = self.loss(output, gt)
+            loss = content_loss_ + mse_loss_
+            import pdb
+            pdb.set_trace()
             loss.backward()
             self.optimizer.step()
 

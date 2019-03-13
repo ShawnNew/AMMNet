@@ -12,7 +12,7 @@ class BaseTrainer:
     """
     Base class for all trainers
     """
-    def __init__(self, model, loss, metrics, optimizer, resume, config, train_logger=None):
+    def __init__(self, model, loss, content_loss, metrics, optimizer, resume, config, train_logger=None):
         self.config = config
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -21,6 +21,7 @@ class BaseTrainer:
         self.device = 3
         device_ids = [3]
         self.model = model.to(self.device)
+        self.content_loss = content_loss.to(self.device)
         if len(device_ids) > 1:
             self.model = torch.nn.DataParallel(model, device_ids=device_ids)
 
