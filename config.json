@@ -30,22 +30,10 @@
         }
     },
     "loss": "mse_loss",
-    "regular_loss": {
-        "type": [
-            "mse_loss",
-            "smooth_l1_loss"
-        ],
-        "args": {
-            "weights": [
-                20, 10
-            ]
-        }
-    },
     "content_loss": {
         "type": "VGG16ContentModel",
         "args": {
             "model": "vgg16",
-            "weight": 0.01,
             "feature_map": 7
         }
     },
