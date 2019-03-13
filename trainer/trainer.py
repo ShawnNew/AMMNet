@@ -20,6 +20,8 @@ class Trainer(BaseTrainer):
         self.do_validation = self.valid_data_loader is not None
         self.lr_scheduler = lr_scheduler
         self.log_step = int(np.sqrt(data_loader.batch_size))
+        self.regular_loss_weight = self.config['regular_loss_weight']
+        self.content_loss_weight = self.config['content_loss_weight']
 
     def _eval_metrics(self, output, target):
         acc_metrics = np.zeros(len(self.metrics))
@@ -63,9 +65,8 @@ class Trainer(BaseTrainer):
             gt_object = img_scale1 * gt
             content_loss_ = self.content_loss(pred_object, gt_object)
             mse_loss_ = self.loss(output, gt)
-            loss = content_loss_ + mse_loss_
-            import pdb
-            pdb.set_trace()
+            loss = self.content_loss_weight * content_loss_ +\
+                     self.regular_loss_weight * mse_loss_
             loss.backward()
             self.optimizer.step()
 

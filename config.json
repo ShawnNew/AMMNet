@@ -29,7 +29,7 @@
             "momentum": 0.9
         }
     },
-    "loss": "mse_loss",
+    "loss": "smooth_l1_loss",
     "content_loss": {
         "type": "VGG16ContentModel",
         "args": {
@@ -37,6 +37,8 @@
             "feature_map": 7
         }
     },
+    "regular_loss_weight": 20,
+    "content_loss_weight": 0.01,
     "metrics": [
         "my_metric"
     ],
