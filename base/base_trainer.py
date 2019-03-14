@@ -12,7 +12,7 @@ class BaseTrainer:
     """
     Base class for all trainers
     """
-    def __init__(self, model, loss, metrics, optimizer, resume, config, train_logger=None):
+    def __init__(self, model, loss, content_loss, metrics, optimizer, resume, config, train_logger=None):
         self.config = config
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -21,6 +21,7 @@ class BaseTrainer:
         self.device = 3
         device_ids = [3]
         self.model = model.to(self.device)
+        self.content_loss = content_loss.to(self.device)
         if len(device_ids) > 1:
             self.model = torch.nn.DataParallel(model, device_ids=device_ids)
 
@@ -83,6 +84,7 @@ class BaseTrainer:
         """
         Full training logic
         """
+        not_improved_count = 0
         for epoch in range(self.start_epoch, self.epochs + 1):
             result = self._train_epoch(epoch)
             
@@ -114,7 +116,6 @@ class BaseTrainer:
                     self.logger.warning("Warning: Metric '{}' is not found. Model performance monitoring is disabled.".format(self.mnt_metric))
                     self.mnt_mode = 'off'
                     improved = False
-                    not_improved_count = 0
 
                 if improved:
                     self.mnt_best = log[self.mnt_metric]

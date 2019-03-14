@@ -1,6 +1,6 @@
 {
     "name": "AMSMNet",
-    "n_gpu": 3,
+    "n_gpu": 1,
     
     "arch": {
         "type": "AMSMNetModel",
@@ -18,19 +18,27 @@
             "data_dir": "/1/Datasets/adobe",
             "batch_size": 4,
             "shuffle": true,
-            "validation_split": 0.1,
-            "num_workers": 1
+            "validation_split": 0.01,
+            "num_workers": 2
         }
     },
     "optimizer": {
-        "type": "Adam",
+        "type": "SGD",
         "args":{
-            "lr": 0.000001,
-            "weight_decay": 0,
-            "amsgrad": true
+            "lr": 0.00001,
+            "momentum": 0.9
         }
     },
     "loss": "mse_loss",
+    "content_loss": {
+        "type": "VGG16ContentModel",
+        "args": {
+            "model": "vgg16",
+            "feature_map": 7
+        }
+    },
+    "regular_loss_weight": 20,
+    "content_loss_weight": 0.01,
     "metrics": [
         "my_metric"
     ],

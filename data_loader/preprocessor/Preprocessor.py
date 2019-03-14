@@ -11,6 +11,7 @@ class Preprocessor:
     # class member
     random_crop_list_ = [320, 480, 640]
     flip_list_ = [True, False]
+    num_test_set = 2000
     # class constructor
     def __init__(self, root, val=0, shuffle=False):
         self.root_dir_ = root
@@ -36,7 +37,7 @@ class Preprocessor:
         total_num = small_count
         file_list = self.dataset_dict[small_folder]
         self.len_val = total_num // 100 * val
-        self.len_test = 200                 # 200 test images
+        self.len_test = self.num_test_set
         self.len_train = total_num - self.len_test - self.len_val
 
         if shuffle:

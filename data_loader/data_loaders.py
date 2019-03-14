@@ -16,6 +16,6 @@ class AMSMNetDataLoader(BaseDataLoader):
             MultiToTensor()   # scale to [0, 1]
             ])
         self.data_dir = data_dir
-        self.dataset = adobeDataset(self.data_dir, train=training, transform=trsfm, shuffle=True)
+        self.dataset = adobeDataset(self.data_dir, train=training, transform=trsfm, shuffle=False)
         super(AMSMNetDataLoader, self).__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
         
