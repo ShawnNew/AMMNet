@@ -9,7 +9,9 @@
             "intermediate_channels": 64,
             "num_resblocks": 16,
             "default_kernel_size": 3,
-            "rgb_range": 255
+            "rgb_range": 255,
+            "attention_input_channels": 3,
+            "dense_growth_rate": 32
         }
     },
     "data_loader": {

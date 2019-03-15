@@ -8,12 +8,14 @@ from model import common
 class AMSMNetModel(BaseModel):
     def __init__(self, conv=common.default_conv, **kwargs,):
         super(AMSMNetModel, self).__init__()
-        # -------------- Define model architecture here ------------
+        # -------------- Define multi-scale model architecture here ------------
         # scale = 3
         input_channles = kwargs['input_channels']
         num_resblocks = kwargs['num_resblocks']
         intermediate_channels = kwargs['intermediate_channels']
         kernel_size = kwargs['default_kernel_size']
+        attention_input_channels = kwargs['attention_input_channels']
+        dense_growth_rate = kwargs['dense_growth_rate']
         activation = nn.ReLU(True)
         rgb_range = kwargs['rgb_range']
         self.scale_idx = 0
@@ -64,10 +66,50 @@ class AMSMNetModel(BaseModel):
         self.tail = nn.Sequential(*_tail)
         self.output = nn.Sequential(*_output)
 
+        # -------------- Define attention model here ----------------------
+        self.attention_conv_head = nn.Sequential(
+            common.BasicBlock(conv, attention_input_channels, intermediate_channels, kernel_size),
+            common.BasicBlock(conv, intermediate_channels, intermediate_channels, kernel_size),
+        )
+        self.attention_maxpool = nn.MaxPool2d(kernel_size=2, return_indices=True)
+        self.down_dense_1 = common.DenseBlock(6, intermediate_channels, bn_size=4, 
+                                        growth_rate=dense_growth_rate, drop_rate=0.1)
+        down_dense_1_output_channels = intermediate_channels + 6*dense_growth_rate
+        self.down_dense_1_trans = common.Transition(down_dense_1_output_channels, 
+                                                down_dense_1_output_channels // 2)
+        self.down_dense_2 = common.DenseBlock(12, down_dense_1_output_channels // 2, 
+                                        bn_size=4, growth_rate=dense_growth_rate, drop_rate=0.1)
+        down_dense_2_output_channels = down_dense_1_output_channels // 2 + 12*dense_growth_rate
+        self.down_dense_2_trans = common.Transition(down_dense_2_output_channels, 
+                                            down_dense_2_output_channels // 2)
+        self.bottom_dense = common.DenseBlock(24, down_dense_2_output_channels // 2, bn_size=4, 
+                                        growth_rate=dense_growth_rate, drop_rate=0.1)
+        bottom_dense_output_channels = down_dense_2_output_channels // 2 + 24*dense_growth_rate
+        self.bottom_dense_upsample = common.Upsampler(conv, bottom_dense_output_channels)
+        self.up_dense_2 = common.DenseBlock(6,
+                                            bottom_dense_output_channels+down_dense_2_output_channels,
+                                            bn_size=4, growth_rate=dense_growth_rate, drop_rate=0.1)
+        
+        up_dense_2_output_channels = bottom_dense_output_channels \
+                        + down_dense_2_output_channels \
+                            + 6*dense_growth_rate
+        self.up_dense_2_upsample = common.Upsampler(conv, up_dense_2_output_channels)
+
+        self.up_dense_1 = common.DenseBlock(6, up_dense_2_output_channels+down_dense_1_output_channels,
+                                            bn_size=4, growth_rate=dense_growth_rate, drop_rate=0.1)
+        up_dense_1_output_channels = up_dense_2_output_channels \
+                        + down_dense_1_output_channels \
+                            + 6*dense_growth_rate
+        self.up_dense_1_upsample = common.Upsampler(conv, up_dense_1_output_channels)
+        self.attention_conv_tail = nn.Sequential(
+            common.BasicBlock(conv, up_dense_1_output_channels+intermediate_channels,
+                            intermediate_channels, kernel_size),
+            common.BasicBlock(conv, intermediate_channels, 1, kernel_size)
+        )
+
     def forward(self, x_scale1, x_scale2, x_scale3):
-        ## --------- scale3(smallest)
-        #import pdb
-        #pdb.set_trace()
+        # ---------------- multi scale ------------------
+        ## scale3(smallest)
         #x_scale3 = self.sub_mean(x_scale3)
         x_scale3 = self.head(x_scale3)
         x_scale3 = self.pre_process[2](x_scale3)
@@ -77,7 +119,7 @@ class AMSMNetModel(BaseModel):
 
         x_scale3 = self.upsample(res_scale3)
 
-        ## -------- scale2
+        ## scale2
         #x_scale2 = self.sub_mean(x_scale2)
         x_scale2 = self.head(x_scale2)
         # concat upsampled scale
@@ -89,7 +131,7 @@ class AMSMNetModel(BaseModel):
 
         x_scale2 = self.upsample(res_scale2)
 
-        ## -------- scale1
+        ## scale1
         #x_scale1 = self.sub_mean(x_scale1)
         x_scale1 = self.head(x_scale1)
         # concat upsampled scale
@@ -99,8 +141,29 @@ class AMSMNetModel(BaseModel):
         res_scale1 = self.body(x_scale1)
         res_scale1 += x_scale1
 
-        x = self.tail(res_scale1)
+        multi_output = self.tail(res_scale1)
         #x = self.add_mean(x)
-        x = self.output(x)
+        multi_output = self.output(multi_output)
 
-        return x
+        # ----------------- Attention -------------------
+        attention = self.attention_conv_head(x_scale1)
+        attention_maxpool = self.attention_maxpool(attention)
+        down_dense_1_ = self.down_dense_1(attention_maxpool)
+        down_dense_1_trans = self.down_dense_1_trans(down_dense_1_)
+        down_dense_2_ = self.down_dense_2(down_dense_1_trans)
+        down_dense_2_trans = self.down_dense_2_trans(down_dense_2_)
+        bottom_dense = self.bottom_dense(down_dense_2_trans)
+        bottom_dense = self.bottom_dense_upsample(bottom_dense)
+        up_dense_2_ = torch.cat((down_dense_2_, bottom_dense), dim=1)
+        up_dense_2_ = self.up_dense_2(up_dense_2_)
+        up_dense_2_ = self.up_dense_2_upsample(up_dense_2_)
+        up_dense_1_ = torch.cat((up_dense_2_, down_dense_1_), dim=1)
+        up_dense_1_ = self.up_dense_1(up_dense_1_)
+        up_dense_1_ = self.up_dense_1_upsample(up_dense_1_)
+        dense_output = torch.cat((up_dense_1_, attention), dim=1)
+        attention_output_ = self.attention_conv_tail(dense_output)
+
+        output = torch.mul(multi_output, attention_output_)
+
+
+        return output
