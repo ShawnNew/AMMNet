@@ -55,7 +55,7 @@ class AMSMNetModel(BaseModel):
         # tail to output prediction
         _tail = [common.BasicBlock(conv, intermediate_channels, 3, kernel_size)]
 
-        _output = nn.Sequential([
+        _output = nn.ModuleList([
             conv(3, 1, 3),
             nn.Sigmoid()
         ])
