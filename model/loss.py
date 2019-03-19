@@ -10,7 +10,7 @@ def mse_loss(output, target):
     return loss_
 
 def smooth_l1_loss(pred, target):
-    loss_ = F._smooth_l1_loss(pred, target)
+    loss_ = F.smooth_l1_loss(pred, target)
     return loss_
 
 def gradient_loss(pred, gradient, target):

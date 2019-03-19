@@ -31,7 +31,7 @@
             "momentum": 0.9
         }
     },
-    "loss": "mse_loss",
+    "loss": "smooth_l1_loss",
     "content_loss": {
         "type": "VGG16ContentModel",
         "args": {
