@@ -53,17 +53,18 @@ class AMSMNetModel(BaseModel):
         self.upsample = common.Upsampler(conv, intermediate_channels, bn=False, act=False)
 
         # tail to output prediction
-        _tail = [common.BasicBlock(conv, intermediate_channels, 3, kernel_size)]
+        # _tail = [common.BasicBlock(conv, intermediate_channels, 3, kernel_size)]
 
         _output = nn.ModuleList([
-            conv(3, 1, 3),
+            # conv(3, 1, 3),
+            common.BasicBlock(conv, intermediate_channels, 1, 1),
             nn.Sigmoid()
         ])
 
 
         self.head = nn.Sequential(*_head)
         self.body = nn.Sequential(*_body)
-        self.tail = nn.Sequential(*_tail)
+        # self.tail = nn.Sequential(*_tail)
         self.output = nn.Sequential(*_output)
 
         # -------------- Define attention model here ----------------------
@@ -104,7 +105,7 @@ class AMSMNetModel(BaseModel):
         self.attention_conv_tail = nn.Sequential(
             common.BasicBlock(conv, up_dense_1_output_channels+intermediate_channels,
                             intermediate_channels, kernel_size),
-            common.BasicBlock(conv, intermediate_channels, 1, kernel_size)
+            common.BasicBlock(conv, intermediate_channels, 1, kernel_size, act=nn.Sigmoid())
         )
 
     def forward(self, x_scale1, x_scale2):
@@ -141,9 +142,9 @@ class AMSMNetModel(BaseModel):
         res_scale1 = self.body(x_scale1_temp)
         res_scale1 += x_scale1_temp
 
-        multi_output = self.tail(res_scale1)
+        multi_output = self.output(res_scale1)
         #x = self.add_mean(x)
-        multi_output = self.output(multi_output)
+        # multi_output = self.output(multi_output)
 
         # ----------------- Attention -------------------
         attention = self.attention_conv_head(x_scale1)
