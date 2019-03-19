@@ -118,10 +118,10 @@ class Trainer(BaseTrainer):
             for batch_idx, sample_batched in enumerate(self.valid_data_loader):
                 img_scale1 = sample_batched['image-scale1'].to(self.device)
                 img_scale2 = sample_batched['image-scale2'].to(self.device)
-                img_scale3 = sample_batched['image-scale3'].to(self.device)
+                #img_scale3 = sample_batched['image-scale3'].to(self.device)
                 gt = sample_batched['gt'].to(self.device)
 
-                output = self.model(img_scale1, img_scale2, img_scale3)
+                output = self.model(img_scale1, img_scale2)
                 loss = self.loss(output, gt)
 
                 self.writer.set_step((epoch - 1) * len(self.valid_data_loader) + batch_idx, 'valid')
