@@ -90,9 +90,9 @@ class Trainer(BaseTrainer):
                     self.data_loader.n_samples,
                     100.0 * batch_idx / len(self.data_loader),
                     loss.item()))
-                self.writer.add_image('input', make_grid(img_scale1.cpu(), nrow=2, normalize=True))
-                self.writer.add_image('gt', make_grid(gt.cpu(), nrow=2, normalize=True))
-                self.writer.add_image('output', make_grid(output.cpu(), nrow=2, normalize=True))
+                self.writer.add_image('input', make_grid(img_scale1[:2].cpu(), nrow=2, normalize=True))
+                self.writer.add_image('gt', make_grid(gt[:2].cpu(), nrow=2, normalize=True))
+                self.writer.add_image('output', make_grid(output[:2].cpu(), nrow=2, normalize=True))
                 
 
         log = {
@@ -138,9 +138,9 @@ class Trainer(BaseTrainer):
                 self.writer.add_scalar('loss', loss.item())
                 total_val_loss += loss.item()
                 total_val_metrics += self._eval_metrics(output, gt)
-                self.writer.add_image('input', make_grid(img_scale1.cpu(), nrow=2, normalize=True))
-                self.writer.add_image('gt', make_grid(gt.cpu(), nrow=2, normalize=True))
-                self.writer.add_image('output', make_grid(output.cpu(), nrow=2, normalize=True))
+                self.writer.add_image('input', make_grid(img_scale1[:2].cpu(), nrow=2, normalize=True))
+                self.writer.add_image('gt', make_grid(gt[:2].cpu(), nrow=2, normalize=True))
+                self.writer.add_image('output', make_grid(output[:2].cpu(), nrow=2, normalize=True))
 
         return {
             'val_loss': total_val_loss / len(self.valid_data_loader),

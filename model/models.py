@@ -49,7 +49,7 @@ class MSMNetModel(BaseModel):
 
         _output = nn.ModuleList([
             # conv(3, 1, 3),
-            common.BasicBlock(conv, intermediate_channels, 1, kernel_size, act=nn.Sigmoid()),
+            common.BasicBlock(conv, intermediate_channels, 1, kernel_size, act=nn.Sigmoid())
         ])
 
 
