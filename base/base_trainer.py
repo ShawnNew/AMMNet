@@ -181,14 +181,24 @@ class BaseTrainer:
         if checkpoint['config']['arch'] != self.config['arch']:
             self.logger.warning('Warning: Architecture configuration given in config file is different from that of checkpoint. ' + \
                                 'This may yield an exception while state_dict is being loaded.')
-        self.model.load_state_dict(checkpoint['state_dict'])
+        model_dict = self.model.state_dict()
+        new_dict = {k: v for k, v in checkpoint['state_dict'].items() if k in model_dict.keys()}
+        model_dict.update(new_dict)
+        self.model.load_state_dict(model_dict)
 
         # load optimizer state from checkpoint only when optimizer type is not changed. 
         if checkpoint['config']['optimizer']['type'] != self.config['optimizer']['type']:
             self.logger.warning('Warning: Optimizer type given in config file is different from that of checkpoint. ' + \
                                 'Optimizer parameters not being resumed.')
         else:
-            self.optimizer.load_state_dict(checkpoint['optimizer'])
+            model_optim_dict = self.optimizer.state_dict()
+            pretrained_optim_dict = checkpoint['optimizer']
+            if model_optim_dict['param_groups'] == pretrained_optim_dict['param_groups']:
+                self.optimizer.load_state_dict(pretrained_optim_dict)
+            else:
+                pass           
+            
+            # self.optimizer.load_state_dict(model_optim_dict)
     
         self.train_logger = checkpoint['logger']
         self.logger.info("Checkpoint '{}' (epoch {}) loaded".format(resume_path, self.start_epoch))

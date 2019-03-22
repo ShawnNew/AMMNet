@@ -7,28 +7,29 @@
         "args": {
             "input_channels": 3,
             "intermediate_channels": 64,
-            "num_resblocks": 16,
+            "num_resblocks": 4,
             "default_kernel_size": 3,
             "rgb_range": 255,
             "attention_input_channels": 3,
-            "dense_growth_rate": 32
+            "dense_growth_rate": 8
         }
     },
     "data_loader": {
         "type": "AMSMNetDataLoader",
         "args":{
             "data_dir": "/1/Datasets/adobe",
-            "batch_size": 4,
+            "batch_size": 8,
             "shuffle": true,
             "validation_split": 0.01,
             "num_workers": 2
         }
     },
     "optimizer": {
-        "type": "SGD",
+        "type": "Adam",
         "args":{
-            "lr": 0.00001,
-            "momentum": 0.9
+            "lr": 0.000001,
+            "weight_decay": 0,
+            "amsgrad": true
         }
     },
     "loss": "mse_loss",
@@ -39,8 +40,8 @@
             "feature_map": 7
         }
     },
-    "regular_loss_weight": 20,
-    "content_loss_weight": 0.01,
+    "regular_loss_weight": 1,
+    "content_loss_weight": 1,
     "metrics": [
         "my_metric"
     ],
