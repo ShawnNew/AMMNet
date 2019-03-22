@@ -27,7 +27,7 @@ class MSMNetModel(BaseModel):
                 common.ResBlock(conv, intermediate_channels, 5, bn=True, act=activation)
             ),
             nn.Sequential(
-                common.PreResBlock(conv, intermediate_channels, intermediate_channels, 5, bn=True, act=activation),
+                common.PreResBlock(conv, 2*intermediate_channels, intermediate_channels, 5, bn=True, act=activation),
                 common.ResBlock(conv, intermediate_channels, 5, bn=True, act=activation)
             ),
             nn.Sequential(

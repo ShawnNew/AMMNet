@@ -54,16 +54,24 @@ class Trainer(BaseTrainer):
         for batch_idx, sample_batched in enumerate(self.data_loader):
             img_scale1 = sample_batched['image-scale1'].to(self.device)
             img_scale2 = sample_batched['image-scale2'].to(self.device)
-            # img_scale3 = sample_batched['image-scale3'].to(self.device)
+            img_scale3 = sample_batched['image-scale3'].to(self.device)
             gt = sample_batched['gt'].to(self.device)
             # trimap = sample_batched['trimap'].to(self.device)
             # grad = sample_batched['gradient'].to(self.device)
             
             self.optimizer.zero_grad()
-            output = self.model(img_scale1, img_scale2)
+            # ms_model = self.model.msmnet_model
+            #attention_model = self.model.attention_model
+            # ms_output = ms_model(img_scale1, img_scale2, img_scale3)
+            #_mask = attention_model(img_scale1)
+            output = self.model(img_scale1, img_scale2, img_scale3)
+
+            ## content loss
             pred_object = img_scale1 * output
             gt_object = img_scale1 * gt
             content_loss_ = self.content_loss(pred_object, gt_object)
+
+            ## segmentation loss
             mse_loss_ = self.loss(output, gt)
             loss = self.content_loss_weight * content_loss_ +\
                      self.regular_loss_weight * mse_loss_
@@ -118,10 +126,12 @@ class Trainer(BaseTrainer):
             for batch_idx, sample_batched in enumerate(self.valid_data_loader):
                 img_scale1 = sample_batched['image-scale1'].to(self.device)
                 img_scale2 = sample_batched['image-scale2'].to(self.device)
-                #img_scale3 = sample_batched['image-scale3'].to(self.device)
+                img_scale3 = sample_batched['image-scale3'].to(self.device)
                 gt = sample_batched['gt'].to(self.device)
 
-                output = self.model(img_scale1, img_scale2)
+                #attention_model = self.model.attention_model
+                #_mask = attention_model(img_scale1)
+                output = self.model(img_scale1, img_scale2, img_scale3)
                 loss = self.loss(output, gt)
 
                 self.writer.set_step((epoch - 1) * len(self.valid_data_loader) + batch_idx, 'valid')
