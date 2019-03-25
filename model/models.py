@@ -49,7 +49,7 @@ class MSMNetModel(BaseModel):
 
         _output = nn.ModuleList([
             # conv(3, 1, 3),
-            common.BasicBlock(conv, intermediate_channels, 1, kernel_size, act=nn.Sigmoid())
+            common.BasicBlock(conv, intermediate_channels, intermediate_channels, kernel_size, act=nn.Sigmoid())
         ])
 
 
@@ -145,7 +145,7 @@ class AttentionModel(BaseModel):
         self.attention_conv_tail = nn.Sequential(
             common.BasicBlock(conv, up_dense_1_output_channels+intermediate_channels,
                             intermediate_channels, kernel_size),
-            common.BasicBlock(conv, intermediate_channels, 1, kernel_size, act=nn.Sigmoid())
+            common.BasicBlock(conv, intermediate_channels, intermediate_channels, kernel_size, act=nn.Sigmoid())
         )
     
     def forward(self, x):
@@ -168,3 +168,23 @@ class AttentionModel(BaseModel):
         output_ = self.attention_conv_tail(dense_output)
 
         return output_
+
+
+class FusionModel(BaseModel):
+    def __init__(self, conv=common.default_conv, **kwargs):
+        super(FusionModel, self).__init__()
+        num_resblocks = kwargs['num_resblocks']
+        intermediate_channels = kwargs['intermediate_channels']
+        res_block = [
+                common.ResBlock(conv, intermediate_channels, 3, bn=True) for _ in range(num_resblocks)
+                ]
+        fusion_model = nn.ModuleList([
+                common.BasicBlock(conv, 2*intermediate_channels, intermediate_channels, 3),
+                nn.Sequential(*res_block),
+                common.BasicBlock(conv, intermediate_channels, 1, 3, act=nn.Sigmoid())
+                ])
+        self.fusion_model = nn.Sequential(*fusion_model)
+
+    def forward(self, x):
+        x = self.fusion_model(x)
+        return x
