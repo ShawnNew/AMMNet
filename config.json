@@ -18,7 +18,7 @@
         "type": "AMSMNetDataLoader",
         "args":{
             "data_dir": "/1/Datasets/adobe",
-            "batch_size": 8,
+            "batch_size": 6,
             "shuffle": true,
             "validation_split": 0.01,
             "num_workers": 2
@@ -27,7 +27,7 @@
     "optimizer": {
         "type": "Adam",
         "args":{
-            "lr": 0.000001,
+            "lr": 0.0001,
             "weight_decay": 0,
             "amsgrad": true
         }
@@ -40,8 +40,9 @@
             "feature_map": 7
         }
     },
-    "regular_loss_weight": 1,
-    "content_loss_weight": 1,
+    "alpha_loss_weight": 20,
+    "comp_loss_weight": 20,
+    "content_loss_weight": 0.1,
     "metrics": [
         "my_metric"
     ],
