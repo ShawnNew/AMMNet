@@ -57,14 +57,8 @@ class Trainer(BaseTrainer):
             img_scale2 = sample_batched['image-scale2'].to(self.device)
             img_scale3 = sample_batched['image-scale3'].to(self.device)
             gt = sample_batched['gt'].to(self.device)
-            # trimap = sample_batched['trimap'].to(self.device)
-            # grad = sample_batched['gradient'].to(self.device)
             
             self.optimizer.zero_grad()
-            # ms_model = self.model.msmnet_model
-            #attention_model = self.model.attention_model
-            # ms_output = ms_model(img_scale1, img_scale2, img_scale3)
-            #_mask = attention_model(img_scale1)
             output = self.model(img_scale1, img_scale2, img_scale3)
             ## content loss
             pred_object = img_scale1 * output
@@ -137,8 +131,6 @@ class Trainer(BaseTrainer):
                 img_scale3 = sample_batched['image-scale3'].to(self.device)
                 gt = sample_batched['gt'].to(self.device)
 
-                #attention_model = self.model.attention_model
-                #_mask = attention_model(img_scale1)
                 output = self.model(img_scale1, img_scale2, img_scale3)
                 loss = self.loss(output, gt)
 

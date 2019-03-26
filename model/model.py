@@ -8,7 +8,6 @@ from model.models import MSMNetModel, AttentionModel, FusionModel
 class AMSMNetModel(BaseModel):
     def __init__(self, conv=common.default_conv, **kwargs,):
         super(AMSMNetModel, self).__init__()
-        num_resblocks = kwargs['num_resblocks']
         self.msmnet_model = MSMNetModel(conv, **kwargs)
         self.attention_model = AttentionModel(conv, **kwargs)
         self.fusion_model = FusionModel(conv, **kwargs)
