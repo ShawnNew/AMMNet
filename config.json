@@ -1,6 +1,6 @@
 {
     "name": "AMSMNet",
-    "n_gpu": 1,
+    "n_gpu": 2,
     
     "arch": {
         "type": "AMSMNetModel",
