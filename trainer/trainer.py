@@ -20,7 +20,8 @@ class Trainer(BaseTrainer):
         self.do_validation = self.valid_data_loader is not None
         self.lr_scheduler = lr_scheduler
         self.log_step = int(np.sqrt(data_loader.batch_size))
-        self.regular_loss_weight = self.config['regular_loss_weight']
+        self.alpha_loss_weight = self.config['alpha_loss_weight']
+        self.comp_loss_weight = self.config['comp_loss_weight']
         self.content_loss_weight = self.config['content_loss_weight']
 
     def _eval_metrics(self, output, target):
@@ -65,21 +66,28 @@ class Trainer(BaseTrainer):
             # ms_output = ms_model(img_scale1, img_scale2, img_scale3)
             #_mask = attention_model(img_scale1)
             output = self.model(img_scale1, img_scale2, img_scale3)
-
             ## content loss
             pred_object = img_scale1 * output
             gt_object = img_scale1 * gt
-            content_loss_ = self.content_loss(pred_object, gt_object)
+            content_loss_ = self.content_loss(pred_object, gt_object) *\
+                            self.content_loss_weight
+            ## comp loss
+            fg = img_scale1 * gt
+            bg = img_scale1 * (1-gt)
+            color_pred = output * fg + (1-output) * bg
+            comp_loss_ = self.loss(color_pred, img_scale1) * self.comp_loss_weight
 
-            ## segmentation loss
-            mse_loss_ = self.loss(output, gt)
-            loss = self.content_loss_weight * content_loss_ +\
-                     self.regular_loss_weight * mse_loss_
+            ## overall loss
+            alpha_loss_ = self.loss(output, gt) * self.alpha_loss_weight
+            loss = alpha_loss_ + comp_loss_ + content_loss_
             loss.backward()
             self.optimizer.step()
 
             self.writer.set_step((epoch - 1) * len(self.data_loader) + batch_idx)
             self.writer.add_scalar('loss', loss.item())
+            self.writer.add_scalars('training-loss', {'alpha-loss':alpha_loss_.item(),
+                                                      'comp-loss':comp_loss_.item(),
+                                                      'content-loss':content_loss_.item()})
             total_loss += loss.item()
             total_metrics += self._eval_metrics(output, gt)
 
