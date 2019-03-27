@@ -46,12 +46,12 @@ class VGG16ContentModel(nn.Module):
     def forward(self, pred, gt):
         content_pred_conv1 = self.conv1(pred)
         content_gt_conv1 = self.conv1(gt)
-        content_pred_conv2 = self.conv2(pred)
-        content_gt_conv2 = self.conv2(gt)
-        content_pred_conv3 = self.conv3(pred)
-        content_gt_conv3 = self.conv3(gt)
-        content_pred_conv4 = self.conv4(pred)
-        content_gt_conv4 = self.conv4(gt)
+        content_pred_conv2 = self.conv2(content_pred_conv1)
+        content_gt_conv2 = self.conv2(content_gt_conv1)
+        content_pred_conv3 = self.conv3(content_pred_conv2)
+        content_gt_conv3 = self.conv3(content_gt_conv2)
+        content_pred_conv4 = self.conv4(content_pred_conv3)
+        content_gt_conv4 = self.conv4(content_gt_conv3)
         loss = self.weights[0] * F.mse_loss(content_pred_conv1, content_gt_conv1) +\
                 self.weights[1] * F.mse_loss(content_pred_conv2, content_gt_conv2) +\
                 self.weights[2] * F.mse_loss(content_pred_conv3, content_gt_conv3) +\
