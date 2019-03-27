@@ -12,7 +12,7 @@ class BaseTrainer:
     """
     Base class for all trainers
     """
-    def __init__(self, model, loss, metrics, optimizer, resume, config, train_logger=None):
+    def __init__(self, model, loss, content_loss, metrics, optimizer, resume, config, train_logger=None):
         self.config = config
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -21,6 +21,7 @@ class BaseTrainer:
         self.device = 3
         device_ids = [3]
         self.model = model.to(self.device)
+        self.content_loss = content_loss.to(self.device)
         if len(device_ids) > 1:
             self.model = torch.nn.DataParallel(model, device_ids=device_ids)
 
@@ -83,6 +84,7 @@ class BaseTrainer:
         """
         Full training logic
         """
+        not_improved_count = 0
         for epoch in range(self.start_epoch, self.epochs + 1):
             result = self._train_epoch(epoch)
             
@@ -114,7 +116,6 @@ class BaseTrainer:
                     self.logger.warning("Warning: Metric '{}' is not found. Model performance monitoring is disabled.".format(self.mnt_metric))
                     self.mnt_mode = 'off'
                     improved = False
-                    not_improved_count = 0
 
                 if improved:
                     self.mnt_best = log[self.mnt_metric]
@@ -180,14 +181,24 @@ class BaseTrainer:
         if checkpoint['config']['arch'] != self.config['arch']:
             self.logger.warning('Warning: Architecture configuration given in config file is different from that of checkpoint. ' + \
                                 'This may yield an exception while state_dict is being loaded.')
-        self.model.load_state_dict(checkpoint['state_dict'])
+        model_dict = self.model.state_dict()
+        new_dict = {k: v for k, v in checkpoint['state_dict'].items() if k in model_dict.keys()}
+        model_dict.update(new_dict)
+        self.model.load_state_dict(model_dict)
 
         # load optimizer state from checkpoint only when optimizer type is not changed. 
         if checkpoint['config']['optimizer']['type'] != self.config['optimizer']['type']:
             self.logger.warning('Warning: Optimizer type given in config file is different from that of checkpoint. ' + \
                                 'Optimizer parameters not being resumed.')
         else:
-            self.optimizer.load_state_dict(checkpoint['optimizer'])
+            model_optim_dict = self.optimizer.state_dict()
+            pretrained_optim_dict = checkpoint['optimizer']
+            if model_optim_dict['param_groups'] == pretrained_optim_dict['param_groups']:
+                self.optimizer.load_state_dict(pretrained_optim_dict)
+            else:
+                pass           
+            
+            # self.optimizer.load_state_dict(model_optim_dict)
     
         self.train_logger = checkpoint['logger']
         self.logger.info("Checkpoint '{}' (epoch {}) loaded".format(resume_path, self.start_epoch))

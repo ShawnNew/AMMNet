@@ -1,25 +1,27 @@
 {
     "name": "AMSMNet",
-    "n_gpu": 3,
+    "n_gpu": 1,
     
     "arch": {
         "type": "AMSMNetModel",
         "args": {
             "input_channels": 3,
             "intermediate_channels": 64,
-            "num_resblocks": 16,
+            "num_resblocks": 4,
             "default_kernel_size": 3,
-            "rgb_range": 255
+            "rgb_range": 255,
+            "attention_input_channels": 3,
+            "dense_growth_rate": 8
         }
     },
     "data_loader": {
         "type": "AMSMNetDataLoader",
         "args":{
             "data_dir": "/1/Datasets/adobe",
-            "batch_size": 4,
+            "batch_size": 8,
             "shuffle": true,
-            "validation_split": 0.1,
-            "num_workers": 1
+            "validation_split": 0.01,
+            "num_workers": 2
         }
     },
     "optimizer": {
@@ -31,6 +33,15 @@
         }
     },
     "loss": "mse_loss",
+    "content_loss": {
+        "type": "VGG16ContentModel",
+        "args": {
+            "model": "vgg16",
+            "feature_map": 7
+        }
+    },
+    "regular_loss_weight": 1,
+    "content_loss_weight": 1,
     "metrics": [
         "my_metric"
     ],

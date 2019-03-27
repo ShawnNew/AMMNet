@@ -11,15 +11,17 @@ class Trainer(BaseTrainer):
     Note:
         Inherited from BaseTrainer.
     """
-    def __init__(self, model, loss, metrics, optimizer, resume, config,
+    def __init__(self, model, loss, content_loss, metrics, optimizer, resume, config,
                  data_loader, valid_data_loader=None, lr_scheduler=None, train_logger=None):
-        super(Trainer, self).__init__(model, loss, metrics, optimizer, resume, config, train_logger)
+        super(Trainer, self).__init__(model, loss, content_loss, metrics, optimizer, resume, config, train_logger)
         self.config = config
         self.data_loader = data_loader
         self.valid_data_loader = valid_data_loader
         self.do_validation = self.valid_data_loader is not None
         self.lr_scheduler = lr_scheduler
         self.log_step = int(np.sqrt(data_loader.batch_size))
+        self.regular_loss_weight = self.config['regular_loss_weight']
+        self.content_loss_weight = self.config['content_loss_weight']
 
     def _eval_metrics(self, output, target):
         acc_metrics = np.zeros(len(self.metrics))
@@ -54,12 +56,25 @@ class Trainer(BaseTrainer):
             img_scale2 = sample_batched['image-scale2'].to(self.device)
             img_scale3 = sample_batched['image-scale3'].to(self.device)
             gt = sample_batched['gt'].to(self.device)
-            trimap = sample_batched['trimap'].to(self.device)
-            grad = sample_batched['gradient'].to(self.device)
+            # trimap = sample_batched['trimap'].to(self.device)
+            # grad = sample_batched['gradient'].to(self.device)
             
             self.optimizer.zero_grad()
+            # ms_model = self.model.msmnet_model
+            #attention_model = self.model.attention_model
+            # ms_output = ms_model(img_scale1, img_scale2, img_scale3)
+            #_mask = attention_model(img_scale1)
             output = self.model(img_scale1, img_scale2, img_scale3)
-            loss = self.loss(output, gt)
+
+            ## content loss
+            pred_object = img_scale1 * output
+            gt_object = img_scale1 * gt
+            content_loss_ = self.content_loss(pred_object, gt_object)
+
+            ## segmentation loss
+            mse_loss_ = self.loss(output, gt)
+            loss = self.content_loss_weight * content_loss_ +\
+                     self.regular_loss_weight * mse_loss_
             loss.backward()
             self.optimizer.step()
 
@@ -75,9 +90,9 @@ class Trainer(BaseTrainer):
                     self.data_loader.n_samples,
                     100.0 * batch_idx / len(self.data_loader),
                     loss.item()))
-                self.writer.add_image('input', make_grid(img_scale1.cpu(), nrow=8, normalize=True))
-                self.writer.add_image('gt', make_grid(gt.cpu(), nrow=8, normalize=True))
-                self.writer.add_image('output', make_grid(output.cpu(), nrow=8, normalize=True))
+                self.writer.add_image('input', make_grid(img_scale1.cpu(), nrow=2, normalize=True))
+                self.writer.add_image('gt', make_grid(gt.cpu(), nrow=2, normalize=True))
+                self.writer.add_image('output', make_grid(output.cpu(), nrow=2, normalize=True))
                 
 
         log = {
@@ -114,6 +129,8 @@ class Trainer(BaseTrainer):
                 img_scale3 = sample_batched['image-scale3'].to(self.device)
                 gt = sample_batched['gt'].to(self.device)
 
+                #attention_model = self.model.attention_model
+                #_mask = attention_model(img_scale1)
                 output = self.model(img_scale1, img_scale2, img_scale3)
                 loss = self.loss(output, gt)
 
@@ -121,9 +138,9 @@ class Trainer(BaseTrainer):
                 self.writer.add_scalar('loss', loss.item())
                 total_val_loss += loss.item()
                 total_val_metrics += self._eval_metrics(output, gt)
-                self.writer.add_image('input', make_grid(img_scale1.cpu(), nrow=8, normalize=True))
-                self.writer.add_image('gt', make_grid(gt.cpu(), nrow=8, normalize=True))
-                self.writer.add_image('output', make_grid(output.cpu(), nrow=8, normalize=True))
+                self.writer.add_image('input', make_grid(img_scale1.cpu(), nrow=2, normalize=True))
+                self.writer.add_image('gt', make_grid(gt.cpu(), nrow=2, normalize=True))
+                self.writer.add_image('output', make_grid(output.cpu(), nrow=2, normalize=True))
 
         return {
             'val_loss': total_val_loss / len(self.valid_data_loader),

@@ -22,18 +22,21 @@ def main(config, resume):
 
     # build model architecture
     model = get_instance(module_arch, 'arch', config)
-    print(model)
+    # print(model)
     
     # get function handles of loss and metrics
     loss = getattr(module_loss, config['loss'])
     metrics = [getattr(module_metric, met) for met in config['metrics']]
+
+    # content loss
+    content_loss = get_instance(module_loss, 'content_loss', config)
 
     # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = get_instance(torch.optim, 'optimizer', config, trainable_params)
     lr_scheduler = get_instance(torch.optim.lr_scheduler, 'lr_scheduler', config, optimizer)
 
-    trainer = Trainer(model, loss, metrics, optimizer, 
+    trainer = Trainer(model, loss, content_loss, metrics, optimizer, 
                       resume=resume,
                       config=config,
                       data_loader=data_loader,

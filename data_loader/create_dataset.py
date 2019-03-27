@@ -3,6 +3,7 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader, TensorDataset
 import os
 from .preprocessor.Preprocessor import Preprocessor
+from .preprocessor.utils import generate_gradient_map
 
 class adobeDataset(Dataset):
     def __init__(self, root_, train=True, transform=None, shuffle=False):
@@ -37,6 +38,8 @@ class adobeDataset(Dataset):
         gt = Image.open(gt_path)             # h*w
         trimap = Image.open(trimap_path)     # h*w
         gradient = Image.open(gradient_path) # h*w
+        # gradient = generate_gradient_map(np.asarray(gradient), 3)
+        # gradient = Image.fromarray(gradient)
         if img.mode != 'RGB': img = img.convert('RGB')
 
         sample = {

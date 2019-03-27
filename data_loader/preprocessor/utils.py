@@ -107,6 +107,30 @@ class MultiToTensor(object):
         }
         
 
+def generate_gradient_map(grad, area=3):
+    ## Generate gradient map based on computed gradient.
+    # This function is used to count the gradient pixels passed a certain small area.
+    # Parameters:
+    #   grad: a gradient matrix
+    #   area: small area to average
+    # Output:
+    #   grad_map
+    num_pixel = int(area / 2)
+    col_ = grad.shape[1]
+    row_ = grad.shape[0] + 2*num_pixel
+    new_row = np.zeros([num_pixel, col_], dtype=np.float32)
+    new_col = np.zeros([row_, num_pixel], dtype=np.float32)
+    result = np.zeros_like(grad)
+
+    _tmp = np.r_[new_row, grad, new_row]
+    _tmp = np.c_[new_col, _tmp, new_col]
+    for i in range(grad.shape[0]):
+        for j in range(grad.shape[1]):
+            area_count = _tmp[i][j] + _tmp[i][j+1] + _tmp[i][j+2] +\
+                        _tmp[i+1][j] + _tmp[i+1][j+1] + _tmp[i+1][j+2] +\
+                        _tmp[i+2][j] + _tmp[i+2][j+1] + _tmp[i+2][j+2]
+            result[i][j] = area_count / (area **2)
+    return result
 
 def getFileList(base, sub):
     """
