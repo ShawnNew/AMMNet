@@ -7,7 +7,7 @@ import model.loss as module_loss
 import model.metric as module_metric
 import model.model as module_arch
 from train import get_instance
-from torchvision.utils import save_image
+from torchvision.utils import make_grid, save_image
 
 
 def main(config, resume, output_path):
@@ -57,9 +57,9 @@ def main(config, resume, output_path):
                     os.stat(output_path)
                 except:
                     os.mkdir(output_path)
-                # import pdb
-                # pdb.set_trace()
-                save_image(output, filename)
+
+                save_ = torch.cat((img_scale1, output.repeat(1,3,1,1)), dim=0)
+                save_image(make_grid(save_.cpu(), nrow=2), filename)
                 # computing loss, metrics on test set
                 loss = loss_fn(output, gt)
                 batch_size = gt.shape[0]
