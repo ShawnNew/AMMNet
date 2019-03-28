@@ -20,7 +20,14 @@ class MultiRescale(object):
         self.scales_list = scales_list
 
     def __call__(self, sample):
+        height, width = sample['image'].height, sample['image'].width
+        if (height%8 is not 0) or (width%8 is not 0):
+            sample['image'] = Image.fromarray(imresize(sample['image'], (height//8*8, width//8*8)))
+            sample['gt'] = Image.fromarray(imresize(sample['gt'], (height//8*8, width//8*8)))
+            sample['trimap'] = Image.fromarray(imresize(sample['trimap'], (height//8*8, width//8*8)))
+            sample['gradient'] = Image.fromarray(imresize(sample['gradient'], (height//8*8, width//8*8)))
         multi_scale_sample = {}
+        multi_scale_sample['name'] = sample['name']
         multi_scale_sample['gt'] = sample['gt']
         multi_scale_sample['trimap'] = sample['trimap']
         multi_scale_sample['gradient'] = sample['gradient']
@@ -77,6 +84,7 @@ class RandomCrop(object):
         gt = imresize(gt_, self.output_size)
         grad = imresize(grad_, self.output_size)
         cropped_sample = {
+            'name': sample['name'],
             'image': Image.fromarray(img), 
             'gt': Image.fromarray(gt),
             'trimap': Image.fromarray(trimap),
@@ -98,6 +106,7 @@ class MultiToTensor(object):
         trimap = np.expand_dims(np.asarray(trimap), axis=0) / 255.
         grad = np.expand_dims(np.asarray(grad), axis=0) / 255.
         return {
+            'name': sample['name'],
             'image-scale1': torch.from_numpy(img_scale1).type(torch.FloatTensor),
             'image-scale2': torch.from_numpy(img_scale2).type(torch.FloatTensor),
             'image-scale3': torch.from_numpy(img_scale3).type(torch.FloatTensor),
