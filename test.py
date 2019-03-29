@@ -10,14 +10,14 @@ from train import get_instance
 from torchvision.utils import make_grid, save_image
 
 
-def main(config, resume, output_path):
+def main(config, resume, device, output_path):
     # setup data_loader instances
     data_loader = getattr(module_data, config['data_loader']['type'])(
         config['data_loader']['args']['data_dir'],
         batch_size=1,
         shuffle=False,
         validation_split=0.0,
-        training=False,
+        training=True,
         num_workers=1
     )
     # build model architecture
@@ -31,12 +31,12 @@ def main(config, resume, output_path):
     # load state dict
     checkpoint = torch.load(resume)
     state_dict = checkpoint['state_dict']
-    if config['n_gpu'] > 1:
-        model = torch.nn.DataParallel(model)
+    #if config['n_gpu'] > 1:
+    #    model = torch.nn.DataParallel(model)
     model.load_state_dict(state_dict)
 
     # prepare model for testing
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda', int(device) if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
     model.eval()
 
@@ -86,7 +86,5 @@ if __name__ == '__main__':
 
     if args.resume:
         config = torch.load(args.resume)['config']
-    if args.device:
-        os.environ["CUDA_VISIBLE_DEVICES"]=args.device
 
-    main(config, args.resume, output_path)
+    main(config, args.resume, args.device, output_path)
