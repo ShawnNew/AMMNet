@@ -114,22 +114,22 @@ class AttentionModel(BaseModel):
         )
         self.attention_maxpool = nn.MaxPool2d(kernel_size=2, return_indices=True)
         self.down_dense_1 = common.DenseBlock(3, intermediate_channels, bn_size=4, 
-                                        growth_rate=dense_growth_rate, drop_rate=0.1)
+                                        growth_rate=dense_growth_rate, drop_rate=0)
         down_dense_1_output_channels = intermediate_channels + 3*dense_growth_rate
         self.down_dense_1_trans = common.Transition(down_dense_1_output_channels, 
                                                 down_dense_1_output_channels // 2)
         self.down_dense_2 = common.DenseBlock(3, down_dense_1_output_channels // 2, 
-                                        bn_size=4, growth_rate=dense_growth_rate, drop_rate=0.1)
+                                        bn_size=4, growth_rate=dense_growth_rate, drop_rate=0)
         down_dense_2_output_channels = down_dense_1_output_channels // 2 + 3*dense_growth_rate
         self.down_dense_2_trans = common.Transition(down_dense_2_output_channels, 
                                             down_dense_2_output_channels // 2)
         self.bottom_dense = common.DenseBlock(3, down_dense_2_output_channels // 2, bn_size=4, 
-                                        growth_rate=dense_growth_rate, drop_rate=0.1)
+                                        growth_rate=dense_growth_rate, drop_rate=0)
         bottom_dense_output_channels = down_dense_2_output_channels // 2 + 3*dense_growth_rate
         self.bottom_dense_upsample = common.Upsampler(conv, bottom_dense_output_channels)
         self.up_dense_2 = common.DenseBlock(3,
                                             bottom_dense_output_channels+down_dense_2_output_channels,
-                                            bn_size=4, growth_rate=dense_growth_rate, drop_rate=0.1)
+                                            bn_size=4, growth_rate=dense_growth_rate, drop_rate=0)
         
         up_dense_2_output_channels = bottom_dense_output_channels \
                         + down_dense_2_output_channels \
@@ -137,7 +137,7 @@ class AttentionModel(BaseModel):
         self.up_dense_2_upsample = common.Upsampler(conv, up_dense_2_output_channels)
 
         self.up_dense_1 = common.DenseBlock(3, up_dense_2_output_channels+down_dense_1_output_channels,
-                                            bn_size=4, growth_rate=dense_growth_rate, drop_rate=0.1)
+                                            bn_size=4, growth_rate=dense_growth_rate, drop_rate=0)
         up_dense_1_output_channels = up_dense_2_output_channels \
                         + down_dense_1_output_channels \
                             + 3*dense_growth_rate

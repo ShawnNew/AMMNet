@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from torchvision.utils import make_grid
 from base import BaseTrainer
+import torch.nn.functional as F
 
 
 class Trainer(BaseTrainer):
@@ -26,9 +27,12 @@ class Trainer(BaseTrainer):
 
     def _eval_metrics(self, output, target):
         acc_metrics = np.zeros(len(self.metrics))
+        dict_ = {}
         for i, metric in enumerate(self.metrics):
             acc_metrics[i] += metric(output, target)
-            self.writer.add_scalar(f'{metric.__name__}', acc_metrics[i])
+            dict_[f'{metric.__name__}'] = acc_metrics[i]
+            # self.writer.add_scalar(f'{metric.__name__}', acc_metrics[i])
+        self.writer.add_scalars('metrics', dict_)
         return acc_metrics
 
     def _train_epoch(self, epoch):
@@ -50,12 +54,12 @@ class Trainer(BaseTrainer):
         self.model.train()
     
         total_loss = 0
-        # TODO: implement metrics
         total_metrics = np.zeros(len(self.metrics))
         for batch_idx, sample_batched in enumerate(self.data_loader):
-            img_scale1 = sample_batched['image-scale1'].to(self.device)
-            img_scale2 = sample_batched['image-scale2'].to(self.device)
-            img_scale3 = sample_batched['image-scale3'].to(self.device)
+            img_scale1 = sample_batched['image'].to(self.device)
+            img_scale2 = F.interpolate(img_scale1.clone(), scale_factor=0.5)
+            img_scale3 = F.interpolate(img_scale1.clone(), scale_factor=0.25)
+
             gt = sample_batched['gt'].to(self.device)
             
             self.optimizer.zero_grad()
