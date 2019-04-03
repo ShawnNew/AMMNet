@@ -7,7 +7,7 @@
         "args": {
             "input_channels": 3,
             "intermediate_channels": 64,
-            "num_resblocks": 4,
+            "num_resblocks": 6,
             "default_kernel_size": 3,
             "rgb_range": 255,
             "attention_input_channels": 3,
@@ -18,10 +18,10 @@
         "type": "AMSMNetDataLoader",
         "args":{
             "data_dir": "/1/Datasets/adobe",
-            "batch_size": 6,
+            "batch_size": 10,
             "shuffle": true,
             "validation_split": 0.01,
-            "num_workers": 2
+            "num_workers": 4
         }
     },
     "optimizer": {
@@ -32,19 +32,19 @@
             "amsgrad": true
         }
     },
-    "loss": "mse_loss",
+    "loss": "smooth_l1_loss",
     "content_loss": {
         "type": "VGG16ContentModel",
         "args": {
             "model": "vgg16",
-            "weights": [0.25, 0.25, 0.25, 0.25]
+            "weights": [0.4, 0.25, 0.25, 0.1]
         }
     },
     "alpha_loss_weight": 20,
     "comp_loss_weight": 20,
     "content_loss_weight": 0.1,
     "metrics": [
-        "my_metric"
+        "mse", "sad"
     ],
     "lr_scheduler": {
         "type": "StepLR",
@@ -54,7 +54,7 @@
         }
     },
     "trainer": {
-        "epochs": 100,
+        "epochs": 200,
         "save_dir": "/1/training-log/amsmnet-saved",
         "save_period": 1,
         "verbosity": 2,

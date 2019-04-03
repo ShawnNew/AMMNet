@@ -17,6 +17,8 @@ class BaseTrainer:
         self.logger = logging.getLogger(self.__class__.__name__)
 
         # setup GPU device if available, move model into configured device
+        # self.device = 3
+        # device_ids = [3]
         self.device, device_ids = self._prepare_device(config['n_gpu'])
         self.model = model.to(self.device)
         self.content_loss = content_loss.to(self.device)
@@ -75,7 +77,7 @@ class BaseTrainer:
             self.logger.warning("Warning: The number of GPU\'s configured to use is {}, but only {} are available on this machine.".format(n_gpu_use, n_gpu))
             n_gpu_use = n_gpu
         device = torch.device('cuda:2' if n_gpu_use > 0 else 'cpu')
-        list_ids = list(range(n_gpu_use))
+        list_ids = list(range(2,2+n_gpu_use))
         return device, list_ids
 
     def train(self):

@@ -43,6 +43,7 @@ class adobeDataset(Dataset):
         if img.mode != 'RGB': img = img.convert('RGB')
 
         sample = {
+            'name': img_path,
             'image': img,
             'gt': gt,
             'trimap': trimap,

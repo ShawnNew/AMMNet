@@ -20,20 +20,13 @@ class MultiRescale(object):
         self.scales_list = scales_list
 
     def __call__(self, sample):
-        multi_scale_sample = {}
-        multi_scale_sample['gt'] = sample['gt']
-        multi_scale_sample['trimap'] = sample['trimap']
-        multi_scale_sample['gradient'] = sample['gradient']
-        i = 1
-        for scale in self.scales_list:
-            if scale == 1:
-                img = sample['image']
-            else:
-                img = Image.fromarray(imresize(sample['image'], scale))
-            img_name = 'image-scale' + str(i)
-            multi_scale_sample[img_name] = img
-            i += 1
-        return multi_scale_sample
+        height, width = sample['image'].height, sample['image'].width
+        if (height%8 is not 0) or (width%8 is not 0):
+            sample['image'] = Image.fromarray(imresize(sample['image'], (height//8*8, width//8*8)))
+            sample['gt'] = Image.fromarray(imresize(sample['gt'], (height//8*8, width//8*8)))
+            sample['trimap'] = Image.fromarray(imresize(sample['trimap'], (height//8*8, width//8*8)))
+            sample['gradient'] = Image.fromarray(imresize(sample['gradient'], (height//8*8, width//8*8)))
+        return sample 
 
 
 
@@ -77,6 +70,7 @@ class RandomCrop(object):
         gt = imresize(gt_, self.output_size)
         grad = imresize(grad_, self.output_size)
         cropped_sample = {
+            'name': sample['name'],
             'image': Image.fromarray(img), 
             'gt': Image.fromarray(gt),
             'trimap': Image.fromarray(trimap),
@@ -88,19 +82,13 @@ class RandomCrop(object):
 class MultiToTensor(object):
     def __call__(self, sample):
         gt, trimap, grad = sample['gt'], sample['trimap'], sample['gradient']
-        img_scale1 = sample['image-scale1']
-        img_scale2 = sample['image-scale2']
-        img_scale3 = sample['image-scale3']
-        img_scale1 = np.transpose(np.asarray(img_scale1), (2, 0, 1)) / 255.
-        img_scale2 = np.transpose(np.asarray(img_scale2), (2, 0, 1)) / 255.
-        img_scale3 = np.transpose(np.asarray(img_scale3), (2, 0, 1)) / 255.
+        img = np.transpose(np.asarray(sample['image']), (2,0,1)) / 255.
         gt = np.expand_dims(np.asarray(gt), axis=0) / 255.
         trimap = np.expand_dims(np.asarray(trimap), axis=0) / 255.
         grad = np.expand_dims(np.asarray(grad), axis=0) / 255.
         return {
-            'image-scale1': torch.from_numpy(img_scale1).type(torch.FloatTensor),
-            'image-scale2': torch.from_numpy(img_scale2).type(torch.FloatTensor),
-            'image-scale3': torch.from_numpy(img_scale3).type(torch.FloatTensor),
+            'name': sample['name'],
+            'image': torch.from_numpy(img).type(torch.FloatTensor),
             'gt': torch.from_numpy(gt).type(torch.FloatTensor),
             'trimap': torch.from_numpy(trimap).type(torch.FloatTensor),
             'gradient': torch.from_numpy(grad).type(torch.FloatTensor)
