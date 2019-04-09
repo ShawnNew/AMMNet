@@ -1,2 +1,32 @@
 # AMSMNet
 Attention Multi-scale Deep Alpha Matting network is a tri-map(side information) free deep image matting network.
+
+## Dependencies
+* NumPy
+* pytorch
+* OpenCV
+
+## Dataset
+### Adobe Deep Image Matting Dataset
+Follow the instruction [instruction](https://sites.google.com/view/deepimagematting) to contact author for the dataset.
+
+## Usage
+### Train
+```shell
+$ python train.py -c config.json
+```
+### Resume
+```shell
+$ python train.py --resume /dir/to/the/saveing/checkpoint -c config.json
+```
+If you want to visualize during training, run in your terminal:
+```shell
+$ tensorboard --logdir saved/runs/
+```
+
+### Results
+![image](test/1-1252426161dfXY_18.png)
+![image](test/1-1255621189mTnS_10.png)
+![image](test/2_0.png)
+![image](test/035A4301_9.png)
+![image](test/035A4323_99.png)
