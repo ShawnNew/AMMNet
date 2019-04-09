@@ -25,6 +25,9 @@ $ tensorboard --logdir saved/runs/
 ```
 
 ### Results
+
+From a best checkpoint of medium-depth network that are trained for 60 epoch. 
+
 ![image](test/1-1252426161dfXY_18.png)
 ![image](test/1-1255621189mTnS_10.png)
 ![image](test/2_0.png)
