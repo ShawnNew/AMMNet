@@ -12,9 +12,10 @@ class AMSMNetModel(BaseModel):
         self.attention_model = AttentionModel(conv, **kwargs)
         self.fusion_model = FusionModel(conv, **kwargs)
     
-    def forward(self, x_scale1, x_scale2, x_scale3):
+    def forward(self, x_scale1, x_scale2, x_scale3, gradient):
         ms_output = self.msmnet_model(x_scale1, x_scale2, x_scale3)
-        attention_output = self.attention_model(x_scale1)
+        attention_input = torch.cat((x_scale1, gradient), dim=1)
+        attention_output = self.attention_model(attention_input)
         output = torch.cat((ms_output, attention_output), dim=1)
         output = self.fusion_model(output)
 

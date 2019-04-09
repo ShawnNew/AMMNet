@@ -10,7 +10,7 @@
             "num_resblocks": 6,
             "default_kernel_size": 3,
             "rgb_range": 255,
-            "attention_input_channels": 3,
+            "attention_input_channels": 4,
             "dense_growth_rate": 8
         }
     },
