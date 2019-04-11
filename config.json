@@ -27,10 +27,10 @@
     "alphamatting_data_loader": {
         "type": "AMSMNetTestDataLoader",
         "args": {
-            "data_dir": "/1/Datasets/alphamatting/low-res",
+            "data_dir": "/home/niuc/alphamatting/low-res",
             "batch_size": 4,
             "shuffle": true,
-            "validation_split": 0.01,
+            "validation_split": 0.05,
             "num_workers": 1
         }
     },
@@ -65,14 +65,14 @@
     },
     "trainer": {
         "epochs": 200,
-        "save_dir": "/1/training-log/amsmnet-saved",
-        "save_period": 1,
+        "save_dir": "/home/niuc/amsmnet-saved",
+        "save_period": 100,
         "verbosity": 2,
         
         "monitor": "min val_loss",
-        "early_stop": 10,
+        "early_stop": 200,
         
         "tensorboardX": true,
-        "log_dir": "/1/training-log/amsmnet-saved/runs"
+        "log_dir": "/home/niuc/amsmnet-saved/runs"
     }
 }

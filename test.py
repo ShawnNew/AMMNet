@@ -16,16 +16,16 @@ import torch.nn.functional as F
 
 def main(config, resume, device, images, output_path):
     # setup data_loader instances
-    # data_loader = getattr(module_data, config['data_loader']['type'])(
-    #     config['data_loader']['args']['data_dir'],
-    #     batch_size=1,
-    #     shuffle=False,
-    #     validation_split=0.0,
-    #     training=True,
-    #     num_workers=1
-    # )
-    f = open(images)
-    # build model architecture
+    data_loader = getattr(module_data, config['data_loader']['type'])(
+        config['data_loader']['args']['data_dir'],
+        batch_size=1,
+        shuffle=False,
+        validation_split=0.0,
+        training=True,
+        num_workers=1
+    )
+    #f = open(images)
+    ## build model architecture
     model = get_instance(module_arch, 'arch', config)
     model.summary()
 
@@ -36,12 +36,12 @@ def main(config, resume, device, images, output_path):
     # load state dict
     checkpoint = torch.load(resume)
     state_dict = checkpoint['state_dict']
-    #if config['n_gpu'] > 1:
-    #    model = torch.nn.DataParallel(model)
+    if config['n_gpu'] > 1:
+        model = torch.nn.DataParallel(model)
     model.load_state_dict(state_dict)
 
     # prepare model for testing
-    device = torch.device('cuda', int(device) if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda', if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
     model.eval()
 
@@ -49,26 +49,10 @@ def main(config, resume, device, images, output_path):
     total_metrics = torch.zeros(len(metric_fns))
 
     with torch.no_grad():
-        for sample_batched in f.readlines():
-            path, name = os.path.split(images)
-            items = sample_batched.rstrip().replace('./', '').split(' ')
-            img_path = os.path.join(path, items[0])
-            trimp_path = os.path.join(path, items[1])
-            img = Image.open(img_path)
-            trimap = Image.open(trimp_path)
-            height, width = img.height, img.width
-            img = np.transpose(imresize(img, (height//8*8, width//8*8)), (2,0,1)) / 255.
-            trimap = np.expand_dims(imresize(trimap, (height//8*8, width//8*8)), axis=0)
-            img = torch.from_numpy(
-                np.expand_dims(img, axis=0)).type(torch.FloatTensor)
-            trimap = np.expand_dims(trimap, axis=0)
-
-            img_scale1 = img.to(device)
+        for sample_batched in enumerate(tqdm(data_loader)):
+            img_scale1 = sample_batched['image'].to(device)
             img_scale2 = F.interpolate(img_scale1.clone(), scale_factor=0.5)
             img_scale3 = F.interpolate(img_scale1.clone(), scale_factor=0.25)
-            # img_scale1 = sample_batched['image-scale1'].to(device)
-            # img_scale2 = sample_batched['image-scale2'].to(device)
-            # img_scale3 = sample_batched['image-scale3'].to(device)
             # gt = sample_batched['gt'].to(device)
             if img_scale1.shape[2] < 1000 and img_scale1.shape[3] < 1000:
                 output = model(img_scale1, img_scale2, img_scale3)

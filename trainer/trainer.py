@@ -106,6 +106,8 @@ class Trainer(BaseTrainer):
             'metrics': (total_metrics / len(self.data_loader)).tolist()
         }
 
+        #import pdb
+        #pdb.set_trace()
         if self.do_validation:
             val_log = self._valid_epoch(epoch)
             log = {**log, **val_log}
@@ -130,9 +132,10 @@ class Trainer(BaseTrainer):
         total_val_metrics = np.zeros(len(self.metrics))
         with torch.no_grad():
             for batch_idx, sample_batched in enumerate(self.valid_data_loader):
-                img_scale1 = sample_batched['image-scale1'].to(self.device)
-                img_scale2 = sample_batched['image-scale2'].to(self.device)
-                img_scale3 = sample_batched['image-scale3'].to(self.device)
+                img_scale1 = sample_batched['image'].to(self.device)
+                img_scale2 = F.interpolate(img_scale1.clone(), scale_factor=0.5)
+                img_scale3 = F.interpolate(img_scale1.clone(), scale_factor=0.25)
+ 
                 gt = sample_batched['gt'].to(self.device)
 
                 output = self.model(img_scale1, img_scale2, img_scale3)
