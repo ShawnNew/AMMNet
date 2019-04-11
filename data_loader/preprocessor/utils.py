@@ -55,7 +55,7 @@ class RandomCrop(object):
         else:
             h_start, h_end, w_start, w_end = validUnknownRegion(trimap_, random_crop_size)
 
-        crop = lambda x: Image.fromarray(np.asarray(x)[h_start:h_end, w_start:w_end])
+        crop = lambda x: Image.fromarray(imresize(np.asarray(x)[h_start:h_end, w_start:w_end], self.output_size))
 
         cropped_sample = {}
         cropped_sample['name'] = sample['name']
