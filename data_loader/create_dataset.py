@@ -100,14 +100,14 @@ class alphamatting(Dataset):
             }  
         else:
             img_path = os.path.join(self.root, items_list[0])
-            gt_path = os.path.join(self.root, items_list[1])
+            trimap_path = os.path.join(self.root, items_list[1])
             img = Image.open(img_path)
-            gt = Image.open(gt_path)
+            trimap = Image.open(trimap_path)
             
             sample = {
                 'name': img_path,
                 'image': img,
-                'gt': gt
+                'trimap': trimap
             }
         
         if self.transform:

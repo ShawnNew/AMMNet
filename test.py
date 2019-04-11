@@ -14,14 +14,14 @@ import numpy as np
 import torch.nn.functional as F
 
 
-def main(config, resume, device, images, output_path):
+def main(config, resume, device, output_path):
     # setup data_loader instances
-    data_loader = getattr(module_data, config['data_loader']['type'])(
-        config['data_loader']['args']['data_dir'],
+    data_loader = getattr(module_data, config['alphamatting_data_loader']['type'])(
+        config['alphamatting_data_loader']['args']['data_dir'],
         batch_size=1,
         shuffle=False,
         validation_split=0.0,
-        training=True,
+        training=False,
         num_workers=1
     )
     #f = open(images)
@@ -41,7 +41,7 @@ def main(config, resume, device, images, output_path):
     model.load_state_dict(state_dict)
 
     # prepare model for testing
-    device = torch.device('cuda', if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
     model.eval()
 
@@ -49,19 +49,21 @@ def main(config, resume, device, images, output_path):
     total_metrics = torch.zeros(len(metric_fns))
 
     with torch.no_grad():
-        for sample_batched in enumerate(tqdm(data_loader)):
+        for batch_idx, sample_batched in enumerate(tqdm(data_loader)):
             img_scale1 = sample_batched['image'].to(device)
             img_scale2 = F.interpolate(img_scale1.clone(), scale_factor=0.5)
             img_scale3 = F.interpolate(img_scale1.clone(), scale_factor=0.25)
+            trimap = sample_batched['trimap']
+            height, width = img_scale1.shape[2], img_scale2.shape[3]
             # gt = sample_batched['gt'].to(device)
             if img_scale1.shape[2] < 1000 and img_scale1.shape[3] < 1000:
                 output = model(img_scale1, img_scale2, img_scale3)
                 # trimap_scaled = trimap / 255.
-                # import pdb
-                # pdb.set_trace()
-                masked_output = np.where(trimap==0, 0., output.cpu().numpy())
-                masked_output = np.where(trimap==255, 1., masked_output)
-                masked_output = torch.from_numpy(masked_output).type(torch.FloatTensor).to(device)
+                #masked_output = np.where(trimap==0, 0., output.cpu().numpy())
+                #masked_output = np.where(trimap==255, 1., masked_output)
+                #masked_output = torch.from_numpy(masked_output).type(torch.FloatTensor).to(device)
+ 
+                img_path = sample_batched['name'][0]
                 filename = os.path.basename(img_path)
                 filename = os.path.join(output_path, filename)
                 try:
@@ -71,8 +73,7 @@ def main(config, resume, device, images, output_path):
 
                 save_ = torch.cat((
                     img_scale1, 
-                    output.repeat(1,3,1,1), 
-                    masked_output.repeat(1,3,1,1)), dim=0)
+                    output.repeat(1,3,1,1)), dim=0)
                 save_image(make_grid(save_.cpu(), nrow=3), filename)
                 # computing loss, metrics on test set
                 # loss = loss_fn(output, gt)
@@ -93,8 +94,6 @@ if __name__ == '__main__':
 
     parser.add_argument('-r', '--resume', default=None, type=str,
                            help='path to latest checkpoint (default: None)')
-    parser.add_argument('-i', '--images', default=None, type=str,
-                            help='test set txt file.')
     parser.add_argument('-d', '--device', default=None, type=str,
                            help='indices of GPUs to enable (default: all)')
 
@@ -103,4 +102,4 @@ if __name__ == '__main__':
     if args.resume:
         config = torch.load(args.resume)['config']
 
-    main(config, args.resume, args.device, args.images, output_path)
+    main(config, args.resume, args.device, output_path)

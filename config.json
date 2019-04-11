@@ -64,7 +64,7 @@
         }
     },
     "trainer": {
-        "epochs": 200,
+        "epochs": 1000,
         "save_dir": "/home/niuc/amsmnet-saved",
         "save_period": 100,
         "verbosity": 2,

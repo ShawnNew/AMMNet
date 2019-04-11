@@ -36,6 +36,7 @@ class AMSMNetTestDataLoader(BaseDataLoader):
             ])
         else:
            trsfm = transforms.Compose([
+                RandomCrop(224),
                 MultiRescale([1, 0.5, 0.25]),
                 MultiToTensor()   # scale to [0, 1]
             ])
