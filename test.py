@@ -104,7 +104,7 @@ def main(config, resume, device, images, output_path):
 
 
 if __name__ == '__main__':
-    output_path = os.path.join(os.getcwd(), 'test')
+    output_path = os.path.join(os.getcwd(), 'output')
     parser = argparse.ArgumentParser(description='PyTorch Template')
 
     parser.add_argument('-r', '--resume', default=None, type=str,

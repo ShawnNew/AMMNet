@@ -54,3 +54,64 @@ class adobeDataset(Dataset):
         
         return sample
 
+class alphamatting(Dataset):
+    def __init__(self, root_, train=True, transform=None, shuffle=False):
+        self.root = os.path.expanduser(root_)
+        self.transform = transform
+        self.trainable = train # indicate whether generate train set or test set
+        if self.trainable:
+            path_ = os.path.join(self.root, 'train.txt')
+            with open(path_, 'r') as f:
+                self.data_file_ = f.readlines()
+                self.len_ = len(self.data_file_)
+        else:
+            path_ = [
+                os.path.join(self.root, 'test-trimap1.txt'),
+                os.path.join(self.root, 'test-trimap2.txt'),
+                os.path.join(self.root, 'test-trimap3.txt')
+            ]
+            data_file_ = []
+            for path in path_:
+                with open(path, 'r') as f:
+                    data_file_ += f.readlines()
+            
+            self.data_file_ = data_file_
+            self.len_ = len(self.data_file_)
+
+    def __len__(self):
+        return self.len_
+
+    def __getitem__(self, idx):
+        line = self.data_file_[idx]
+        items_list = line.rstrip().replace('./', '').split(' ')
+        if self.trainable:
+            img_path = os.path.join(self.root, items_list[0])
+            gt_path = os.path.join(self.root, items_list[2])
+            trimap_path = os.path.join(self.root, items_list[1])
+            img = Image.open(img_path)
+            gt = Image.open(gt_path)
+            trimap = Image.open(trimap_path)
+
+            sample = {
+                'name': img_path,
+                'image': img,
+                'gt': gt,
+                'trimap': trimap
+            }  
+        else:
+            img_path = os.path.join(self.root, items_list[0])
+            gt_path = os.path.join(self.root, items_list[1])
+            img = Image.open(img_path)
+            gt = Image.open(gt_path)
+            
+            sample = {
+                'name': img_path,
+                'image': img,
+                'gt': gt
+            }
+        
+        if self.transform:
+            sample = self.transform(sample)
+
+        return sample
+
