@@ -5,26 +5,51 @@ import os
 from .preprocessor.Preprocessor import Preprocessor
 from .preprocessor.utils import generate_gradient_map
 
-class adobeDataset(Dataset):
-    def __init__(self, root_, train=True, transform=None, shuffle=False):
+class myDataset(Dataset):
+    def __init__(self, root_, train, transform, shuffle):
         self.root = os.path.expanduser(root_)
         self.transform = transform
         self.trainable = train # indicate whether generate train set or test set
-
-        preprocessor = Preprocessor(self.root, 0, shuffle=shuffle)
         
+        train_lists_ = []
+        test_lists_ = []
+
+        train_lists_ += [os.path.join(self.root, x) \
+                        for x in os.listdir(self.root) \
+                        if os.path.isfile(os.path.join(self.root, x)) and\
+                        x.endswith('txt') and 'train' in x]
+        test_lists_ += [
+                        os.path.join(self.root, x) \
+                        for x in os.listdir(self.root) \
+                        if os.path.isfile(os.path.join(self.root, x)) and\
+                        x.endswith('txt') and 'test' in x]
+
         if self.trainable:
-            with open(preprocessor.getTrainFile(), 'r') as f:
-                self.data_file_ = f.readlines()
-            self.len_ = preprocessor.len_train
+            data_file_ = []
+            for path in train_lists_:
+                with open(path, 'r') as f:
+                    data_file_ += f.readlines()
+
+            self.data_file_ = data_file_
+            self.len_ = len(self.data_file_)
         else:
-            with open(preprocessor.getTestFile(), 'r') as f:
-                self.data_file_ = f.readlines()
-            self.len_ = preprocessor.len_test
+            data_file_ = []
+            for path in test_lists_:
+                with open(path, 'r') as f:
+                    data_file_ += f.readlines()
+            self.data_file_ = data_file_
+            self.len_ = len(self.data_file_)
 
     def __len__(self):
-        # return the length of the dataset
         return self.len_
+
+    def __getitem__(self, idx):
+        raise NotImplementedError
+
+
+class adobeDataset(myDataset):
+    def __init__(self, root_, train=True, transform=None, shuffle=False):
+        super(adobeDataset, self).__init__(root_, train, transform, shuffle)
 
     def __getitem__(self, idx):
         # return the idx's image and related information
@@ -54,37 +79,16 @@ class adobeDataset(Dataset):
         
         return sample
 
-class alphamatting(Dataset):
-    def __init__(self, root_, train=True, transform=None, shuffle=False):
-        self.root = os.path.expanduser(root_)
-        self.transform = transform
-        self.trainable = train # indicate whether generate train set or test set
-        if self.trainable:
-            path_ = os.path.join(self.root, 'train.txt')
-            with open(path_, 'r') as f:
-                self.data_file_ = f.readlines()
-                self.len_ = len(self.data_file_)
-        else:
-            path_ = [
-                os.path.join(self.root, 'test-trimap1.txt'),
-                os.path.join(self.root, 'test-trimap2.txt'),
-                os.path.join(self.root, 'test-trimap3.txt')
-            ]
-            data_file_ = []
-            for path in path_:
-                with open(path, 'r') as f:
-                    data_file_ += f.readlines()
-            
-            self.data_file_ = data_file_
-            self.len_ = len(self.data_file_)
 
-    def __len__(self):
-        return self.len_
+class alphamatting(myDataset):
+    def __init__(self, root_, train=True, transform=None, shuffle=False):
+        super(alphamatting, self).__init__(root_, train, transform, shuffle)
 
     def __getitem__(self, idx):
         line = self.data_file_[idx]
         items_list = line.rstrip().replace('./', '').split(' ')
         if self.trainable:
+            # modify here for different datasets
             img_path = os.path.join(self.root, items_list[0])
             gt_path = os.path.join(self.root, items_list[2])
             trimap_path = os.path.join(self.root, items_list[1])
