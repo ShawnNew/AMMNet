@@ -123,12 +123,15 @@ class alphamatting(myDataset):
 
 class carmediaDataset(myDataset):
     def __init__(self, root_, train=True, transform=None, shuffle=False):
-        super(adobeDataset, self).__init__(root_, train, transform, shuffle)
+        super(carmediaDataset, self).__init__(root_, train, transform, shuffle)
 
     def __getitem__(self, idx):
         # return the idx's image and related information
         line = self.data_file_[idx]
-        items_list = line.rstrip().replace('./', '').split(' ')
+	
+        import pdb
+        pdb.set_trace()
+        items_list = line.rstrip().replace('./', '').split(', ')
 
         img_path = os.path.join(self.root, items_list[0])
         gt_path = os.path.join(self.root, items_list[1])
