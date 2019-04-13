@@ -1,8 +1,9 @@
 import numpy as np
+import random
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader, TensorDataset
 import os
-from .preprocessor.Preprocessor import Preprocessor
+#from .preprocessor.Preprocessor import Preprocessor
 from .preprocessor.utils import generate_gradient_map
 
 class myDataset(Dataset):
@@ -29,7 +30,6 @@ class myDataset(Dataset):
             for path in train_lists_:
                 with open(path, 'r') as f:
                     data_file_ += f.readlines()
-
             self.data_file_ = data_file_
             self.len_ = len(self.data_file_)
         else:
@@ -39,6 +39,8 @@ class myDataset(Dataset):
                     data_file_ += f.readlines()
             self.data_file_ = data_file_
             self.len_ = len(self.data_file_)
+        if shuffle:
+            random.shuffle(self.data_file_)
 
     def __len__(self):
         return self.len_
