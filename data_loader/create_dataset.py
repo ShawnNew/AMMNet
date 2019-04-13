@@ -121,3 +121,30 @@ class alphamatting(myDataset):
 
         return sample
 
+class carmediaDataset(myDataset):
+    def __init__(self, root_, train=True, transform=None, shuffle=False):
+        super(adobeDataset, self).__init__(root_, train, transform, shuffle)
+
+    def __getitem__(self, idx):
+        # return the idx's image and related information
+        line = self.data_file_[idx]
+        items_list = line.rstrip().replace('./', '').split(' ')
+
+        img_path = os.path.join(self.root, items_list[0])
+        gt_path = os.path.join(self.root, items_list[1])
+        trimap_path = os.path.join(self.root, items_list[2])
+        img = Image.open(img_path)           # h*w*c
+        gt = Image.open(gt_path)             # h*w
+        trimap = Image.open(trimap_path)     # h*w
+        if img.mode != 'RGB': img = img.convert('RGB')
+
+        sample = {
+            'name': img_path,
+            'image': img,
+            'gt': gt,
+            'trimap': trimap
+        }
+        if self.transform:
+            sample = self.transform(sample)
+        
+        return sample

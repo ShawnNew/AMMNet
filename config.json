@@ -34,6 +34,16 @@
             "num_workers": 1
         }
     },
+    "carmedia_data_loader":{
+        "type":"AMSMNetTestDataLoader",
+        "args":{
+            "data_dir": "/public/car-media",
+            "batch_size": 4,
+            "shuffle": true,
+            "validation_split": 0.05,
+            "num_workers": 1
+        }
+    }
     "optimizer": {
         "type": "Adam",
         "args":{
