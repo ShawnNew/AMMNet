@@ -15,14 +15,21 @@ class MultiRescale(object):
     Args:
         scales_list (tuple or int): Desired output scale list. 
     """
+    def __init__(self, output_size):
+        assert isinstance(output_size, (int, tuple))
+        if isinstance(output_size, int):
+            self.output_size = (output_size, output_size)
+        else:
+            assert len(output_size) == 2
+            self.output_size = output_size
 
     def __call__(self, sample):
-        height, width = sample['image'].height, sample['image'].width
-        rescale = lambda x: Image.fromarray(imresize(x, (height//8*8, width//8*8)))
-        if (height%8 is not 0) or (width%8 is not 0):
-            for k, v in sample.items():
-                if k is not 'name':
-                    sample[k] = rescale(v)
+        # height, width = sample['size'][0], sample['size'][1]
+        rescale = lambda x: Image.fromarray(imresize(x, self.output_size))
+        # if (height%8 is not 0) or (width%8 is not 0):
+        for k, v in sample.items():
+            if k is not 'name' and k is not 'size':
+                sample[k] = rescale(v)
         return sample 
 
 
@@ -79,8 +86,9 @@ class MultiToTensor(object):
             return x
         sample_ = {}
         sample_['name'] = sample['name']
+        sample_['size'] = sample['size']
         for k, v in sample.items():
-            if k is not 'name':
+            if k is not 'name' and k is not 'size':
                 sample_[k] = trans(v)
         return sample_
         
