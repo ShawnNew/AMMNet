@@ -15,9 +15,6 @@ class MultiRescale(object):
     Args:
         scales_list (tuple or int): Desired output scale list. 
     """
-    def __init__(self, scales_list):
-        assert isinstance(scales_list, list)
-        self.scales_list = scales_list
 
     def __call__(self, sample):
         height, width = sample['image'].height, sample['image'].width

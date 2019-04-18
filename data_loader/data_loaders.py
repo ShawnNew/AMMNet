@@ -13,13 +13,13 @@ class AMSMNetDataLoader(BaseDataLoader):
         
         if training:
             trsfm = transforms.Compose([
-                RandomCrop(224),
-                MultiRescale([1, 0.5, 0.25]),
+                RandomCrop(480),
+                MultiRescale(),
                 MultiToTensor()   # scale to [0, 1]
             ])
         else:
             trsfm = transforms.Compose([
-                MultiRescale([1, 0.5, 0.25]),
+                MultiRescale(),
                 MultiToTensor()   # scale to [0, 1]
             ])
         self.data_dir = data_dir
@@ -30,14 +30,14 @@ class AMSMNetTestDataLoader(BaseDataLoader):
     def __init__(self, data_dir, batch_size, shuffle, validation_split, num_workers, training=True):
         if training:
             trsfm = transforms.Compose([
-                RandomCrop(224),
-                MultiRescale([1, 0.5, 0.25]),
+                RandomCrop(320),
+                MultiRescale(),
                 MultiToTensor()   # scale to [0, 1]
             ])
         else:
            trsfm = transforms.Compose([
-                RandomCrop(224),
-                MultiRescale([1, 0.5, 0.25]),
+                RandomCrop(320),
+                MultiRescale(),
                 MultiToTensor()   # scale to [0, 1]
             ])
         self.data_dir = data_dir
