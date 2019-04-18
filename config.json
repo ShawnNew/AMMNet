@@ -14,14 +14,24 @@
             "dense_growth_rate": 8
         }
     },
-    "data_loader": {
+    "adobe_data_loader": {
         "type": "AMSMNetDataLoader",
         "args":{
             "data_dir": "/1/Datasets/adobe",
-            "batch_size": 10,
+            "batch_size": 2,
             "shuffle": true,
             "validation_split": 0.01,
             "num_workers": 4
+        }
+    },
+    "alphamatting_data_loader": {
+        "type": "AMSMNetTestDataLoader",
+        "args": {
+            "data_dir": "/1/Datasets/alphamatting/low-res",
+            "batch_size": 4,
+            "shuffle": true,
+            "validation_split": 0.05,
+            "num_workers": 1
         }
     },
     "optimizer": {
@@ -54,13 +64,13 @@
         }
     },
     "trainer": {
-        "epochs": 200,
+        "epochs": 1000,
         "save_dir": "/1/training-log/amsmnet-saved",
         "save_period": 1,
         "verbosity": 2,
         
         "monitor": "min val_loss",
-        "early_stop": 10,
+        "early_stop": 200,
         
         "tensorboardX": true,
         "log_dir": "/1/training-log/amsmnet-saved/runs"

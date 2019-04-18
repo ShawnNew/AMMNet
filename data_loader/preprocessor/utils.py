@@ -15,17 +15,14 @@ class MultiRescale(object):
     Args:
         scales_list (tuple or int): Desired output scale list. 
     """
-    def __init__(self, scales_list):
-        assert isinstance(scales_list, list)
-        self.scales_list = scales_list
 
     def __call__(self, sample):
         height, width = sample['image'].height, sample['image'].width
+        rescale = lambda x: Image.fromarray(imresize(x, (height//8*8, width//8*8)))
         if (height%8 is not 0) or (width%8 is not 0):
-            sample['image'] = Image.fromarray(imresize(sample['image'], (height//8*8, width//8*8)))
-            sample['gt'] = Image.fromarray(imresize(sample['gt'], (height//8*8, width//8*8)))
-            sample['trimap'] = Image.fromarray(imresize(sample['trimap'], (height//8*8, width//8*8)))
-            sample['gradient'] = Image.fromarray(imresize(sample['gradient'], (height//8*8, width//8*8)))
+            for k, v in sample.items():
+                if k is not 'name':
+                    sample[k] = rescale(v)
         return sample 
 
 
@@ -47,52 +44,45 @@ class RandomCrop(object):
 
     def __call__(self, sample):
         random_crop_size = random.choice(self.random_crop_list)
-        img, gt, trimap, grad = sample['image'], sample['gt'], sample['trimap'], sample['gradient']
-        # crop along unknown region
-        img_ = np.asarray(img)
-        gt_ = np.asarray(gt)
+        trimap = sample['trimap']
         trimap_ = np.asarray(trimap)
-        grad_ = np.asarray(grad)
-        h_start = h_end = w_start = w_end = 0
         if (min(trimap_.shape) < random_crop_size):
             h_start = w_start = 0
             h_end = w_end = min(trimap_.shape)
         else:
             h_start, h_end, w_start, w_end = validUnknownRegion(trimap_, random_crop_size)
-        img_ = img_[h_start:h_end, w_start:w_end, :]
-        trimap_ = trimap_[h_start:h_end, w_start:w_end]
-        gt_ = gt_[h_start:h_end, w_start:w_end]
-        grad_ = grad_[h_start:h_end, w_start:w_end]
+
+        crop = lambda x: Image.fromarray(imresize(np.asarray(x)[h_start:h_end, w_start:w_end], self.output_size))
+
+        cropped_sample = {}
+        cropped_sample['name'] = sample['name']
         
-        # resize
-        img = imresize(img_, self.output_size)
-        trimap = imresize(trimap_, self.output_size)
-        gt = imresize(gt_, self.output_size)
-        grad = imresize(grad_, self.output_size)
-        cropped_sample = {
-            'name': sample['name'],
-            'image': Image.fromarray(img), 
-            'gt': Image.fromarray(gt),
-            'trimap': Image.fromarray(trimap),
-            'gradient': Image.fromarray(grad)
-        }
+        for k, v in sample.items():
+            if k is not 'name':
+                cropped_sample[k] = crop(v)
+        
         return cropped_sample
+
 
 
 class MultiToTensor(object):
     def __call__(self, sample):
-        gt, trimap, grad = sample['gt'], sample['trimap'], sample['gradient']
-        img = np.transpose(np.asarray(sample['image']), (2,0,1)) / 255.
-        gt = np.expand_dims(np.asarray(gt), axis=0) / 255.
-        trimap = np.expand_dims(np.asarray(trimap), axis=0) / 255.
-        grad = np.expand_dims(np.asarray(grad), axis=0) / 255.
-        return {
-            'name': sample['name'],
-            'image': torch.from_numpy(img).type(torch.FloatTensor),
-            'gt': torch.from_numpy(gt).type(torch.FloatTensor),
-            'trimap': torch.from_numpy(trimap).type(torch.FloatTensor),
-            'gradient': torch.from_numpy(grad).type(torch.FloatTensor)
-        }
+        def trans(x):
+            if x.mode == 'RGB':
+                x = torch.from_numpy(
+                    np.transpose(np.asarray(x), (2,0,1)) / 255.
+                ).type(torch.FloatTensor)
+            else:
+                x = torch.from_numpy(
+                    np.expand_dims(np.asarray(x), axis=0) / 255.
+                ).type(torch.FloatTensor)
+            return x
+        sample_ = {}
+        sample_['name'] = sample['name']
+        for k, v in sample.items():
+            if k is not 'name':
+                sample_[k] = trans(v)
+        return sample_
         
 
 def generate_gradient_map(grad, area=3):
