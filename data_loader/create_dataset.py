@@ -129,9 +129,7 @@ class carmediaDataset(myDataset):
         # return the idx's image and related information
         line = self.data_file_[idx]
 	
-        import pdb
-        pdb.set_trace()
-        items_list = line.rstrip().replace('./', '').split(', ')
+        items_list = line.rstrip().replace('./', '').split(' ')
 
         img_path = os.path.join(self.root, items_list[0])
         gt_path = os.path.join(self.root, items_list[1])
