@@ -12,9 +12,9 @@ class Trainer(BaseTrainer):
     Note:
         Inherited from BaseTrainer.
     """
-    def __init__(self, model, loss, content_loss, metrics, optimizer, resume, config,
+    def __init__(self, model, loss, content_loss, metrics, optimizer, resume, finetune, config,
                  data_loader, valid_data_loader=None, lr_scheduler=None, train_logger=None):
-        super(Trainer, self).__init__(model, loss, content_loss, metrics, optimizer, resume, config, train_logger)
+        super(Trainer, self).__init__(model, loss, content_loss, metrics, optimizer, resume, finetune, config, train_logger)
         self.config = config
         self.data_loader = data_loader
         self.valid_data_loader = valid_data_loader

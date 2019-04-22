@@ -12,7 +12,7 @@ class BaseTrainer:
     """
     Base class for all trainers
     """
-    def __init__(self, model, loss, content_loss, metrics, optimizer, resume, config, train_logger=None):
+    def __init__(self, model, loss, content_loss, metrics, optimizer, resume, finetune, config, train_logger=None):
         self.config = config
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -64,7 +64,9 @@ class BaseTrainer:
 
         if resume:
             self._resume_checkpoint(resume)
-    
+        if finetune:
+            self._resume_checkpoint(finetune, finetune=True)
+
     def _prepare_device(self, n_gpu_use):
         """ 
         setup GPU device if available, move model into configured device
@@ -76,8 +78,8 @@ class BaseTrainer:
         if n_gpu_use > n_gpu:
             self.logger.warning("Warning: The number of GPU\'s configured to use is {}, but only {} are available on this machine.".format(n_gpu_use, n_gpu))
             n_gpu_use = n_gpu
-        device = torch.device('cuda:1' if n_gpu_use > 0 else 'cpu')
-        list_ids = list(range(1, 1+n_gpu_use))
+        device = torch.device('cuda:0' if n_gpu_use > 0 else 'cpu')
+        list_ids = list(range(n_gpu_use))
         return device, list_ids
 
     def train(self):
@@ -166,7 +168,7 @@ class BaseTrainer:
             torch.save(state, best_path)
             self.logger.info("Saving current best: {} ...".format('model_best.pth'))
 
-    def _resume_checkpoint(self, resume_path):
+    def _resume_checkpoint(self, resume_path, finetune=False):
         """
         Resume from saved checkpoints
 
@@ -174,8 +176,9 @@ class BaseTrainer:
         """
         self.logger.info("Loading checkpoint: {} ...".format(resume_path))
         checkpoint = torch.load(resume_path)
-        self.start_epoch = checkpoint['epoch'] + 1
-        self.mnt_best = checkpoint['monitor_best']
+        if not finetune:
+            self.start_epoch = checkpoint['epoch'] + 1
+            self.mnt_best = checkpoint['monitor_best']
 
         # load architecture params from checkpoint.
         if checkpoint['config']['arch'] != self.config['arch']:
