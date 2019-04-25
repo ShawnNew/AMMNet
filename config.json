@@ -34,6 +34,16 @@
             "num_workers": 1
         }
     },
+    "carmedia_data_loader":{
+        "type":"AMSMNetCarMediaDataLoader",
+        "args":{
+            "data_dir": "/public/car-media",
+            "batch_size": 4,
+            "shuffle": true,
+            "validation_split": 0.05,
+            "num_workers": 1
+        }
+    },
     "optimizer": {
         "type": "Adam",
         "args":{
@@ -65,7 +75,7 @@
     },
     "trainer": {
         "epochs": 1000,
-        "save_dir": "/1/training-log/amsmnet-saved",
+        "save_dir": "/home/xul61/amsmnet-saved",
         "save_period": 1,
         "verbosity": 2,
         
@@ -75,6 +85,6 @@
         "log_step": 4,
         
         "tensorboardX": true,
-        "log_dir": "/1/training-log/amsmnet-saved/runs"
+        "log_dir": "/home/xul61/amsmnet-saved/runs"
     }
 }
