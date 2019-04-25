@@ -14,12 +14,12 @@ class AMSMNetDataLoader(BaseDataLoader):
         if training:
             trsfm = transforms.Compose([
                 # RandomCrop(480),
-                MultiRescale(480),
+                MultiRescale(320),
                 MultiToTensor()   # scale to [0, 1]
             ])
         else:
             trsfm = transforms.Compose([
-                MultiRescale(480),
+                MultiRescale(320),
                 MultiToTensor()   # scale to [0, 1]
             ])
         self.data_dir = data_dir

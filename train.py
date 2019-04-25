@@ -13,7 +13,7 @@ from utils import Logger
 def get_instance(module, name, config, *args):
     return getattr(module, config[name]['type'])(*args, **config[name]['args'])
 
-def main(config, resume):
+def main(config, resume=None, finetune=None):
     train_logger = Logger()
 
     # setup data_loader instances
@@ -38,6 +38,7 @@ def main(config, resume):
 
     trainer = Trainer(model, loss, content_loss, metrics, optimizer, 
                       resume=resume,
+                      finetune=finetune,
                       config=config,
                       data_loader=data_loader,
                       valid_data_loader=valid_data_loader,
@@ -54,6 +55,8 @@ if __name__ == '__main__':
                            help='path to latest checkpoint (default: None)')
     parser.add_argument('-d', '--device', default=None, type=str,
                            help='indices of GPUs to enable (default: all)')
+    parser.add_argument('-f', '--finetune', default=None, type=str,
+                            help='path to the finetune checkpoint (default: None)')
     args = parser.parse_args()
 
     if args.config:
@@ -70,4 +73,4 @@ if __name__ == '__main__':
     if args.device:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.device
 
-    main(config, args.resume)
+    main(config, resume=args.resume, finetune=args.finetune)

@@ -12,15 +12,15 @@ class Trainer(BaseTrainer):
     Note:
         Inherited from BaseTrainer.
     """
-    def __init__(self, model, loss, content_loss, metrics, optimizer, resume, config,
+    def __init__(self, model, loss, content_loss, metrics, optimizer, resume, finetune, config,
                  data_loader, valid_data_loader=None, lr_scheduler=None, train_logger=None):
-        super(Trainer, self).__init__(model, loss, content_loss, metrics, optimizer, resume, config, train_logger)
+        super(Trainer, self).__init__(model, loss, content_loss, metrics, optimizer, resume, finetune, config, train_logger)
         self.config = config
         self.data_loader = data_loader
         self.valid_data_loader = valid_data_loader
         self.do_validation = self.valid_data_loader is not None
         self.lr_scheduler = lr_scheduler
-        self.log_step = int(np.sqrt(data_loader.batch_size))
+        self.log_step = self.config['trainer']['log_step']
         self.alpha_loss_weight = self.config['alpha_loss_weight']
         self.comp_loss_weight = self.config['comp_loss_weight']
         self.content_loss_weight = self.config['content_loss_weight']
