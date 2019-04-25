@@ -1,5 +1,3 @@
-import os
-import cv2 as cv
 import numpy as np
 import random
 from scipy.misc import imresize
