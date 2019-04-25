@@ -20,7 +20,7 @@ class Trainer(BaseTrainer):
         self.valid_data_loader = valid_data_loader
         self.do_validation = self.valid_data_loader is not None
         self.lr_scheduler = lr_scheduler
-        self.log_step = int(np.sqrt(data_loader.batch_size))
+        self.log_step = self.config['trainer']['log_step']
         self.alpha_loss_weight = self.config['alpha_loss_weight']
         self.comp_loss_weight = self.config['comp_loss_weight']
         self.content_loss_weight = self.config['content_loss_weight']
