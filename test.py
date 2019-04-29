@@ -16,9 +16,9 @@ import torch.nn.functional as F
 
 def main(config, resume, device, output_path):
     # setup data_loader instances
-    data_loader = getattr(module_data, config['adobe_data_loader']['type'])(
-        config['adobe_data_loader']['args']['data_dir'],
-        batch_size=64,
+    data_loader = getattr(module_data, config['carmedia_data_loader']['type'])(
+        config['carmedia_data_loader']['args']['data_dir'],
+        batch_size=32,
         shuffle=False,
         validation_split=0.0,
         training=False,
@@ -67,14 +67,19 @@ def main(config, resume, device, output_path):
 
             for i in range(len(img_scale1)):
                 filename = os.path.join(output_path, os.path.basename(sample_batched['name'][i]))
-                img_ = img_scale1[i].unsqueeze(0)
-                alpha_ = output[i].unsqueeze(0)
+
+                img_ = img_scale1[i].unsqueeze(0).cpu()
+                alpha_ = output[i].unsqueeze(0).cpu()
+                alpha_ = torch.where(
+                    alpha_ < 0.1, 
+                    torch.tensor(0.0), 
+                    alpha_)
                 matte_img_ = img_ * alpha_
                 save_ = torch.cat((
                     img_, alpha_.repeat(1,3,1,1),
                     matte_img_ 
                 ), dim=0)
-                save_image(make_grid(save_.cpu(), nrow=3), filename)
+                save_image(make_grid(save_, nrow=3), filename)
 
             # computing loss, metrics on test set
             loss = loss_fn(output, gt)
