@@ -53,12 +53,12 @@ class AMSMNetCarMediaDataLoader(BaseDataLoader):
         if training:
             trsfm = transforms.Compose([
                 # RandomCrop(320),
-                MultiRescale(320),
+                MultiRescale(480),
                 MultiToTensor()   # scale to [0, 1]
             ])
         else:
             trsfm = transforms.Compose([
-                MultiRescale([1, 0.5, 0.25]),
+                MultiRescale(480),
                 MultiToTensor()   # scale to [0, 1]
             ])
         self.data_dir = data_dir
