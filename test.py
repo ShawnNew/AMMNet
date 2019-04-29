@@ -16,13 +16,13 @@ import torch.nn.functional as F
 
 def main(config, resume, device, output_path):
     # setup data_loader instances
-    data_loader = getattr(module_data, config['alphamatting_data_loader']['type'])(
-        config['alphamatting_data_loader']['args']['data_dir'],
-        batch_size=1,
+    data_loader = getattr(module_data, config['adobe_data_loader']['type'])(
+        config['adobe_data_loader']['args']['data_dir'],
+        batch_size=64,
         shuffle=False,
         validation_split=0.0,
         training=False,
-        num_workers=1
+        num_workers=4
     )
     #f = open(images)
     ## build model architecture
@@ -49,38 +49,39 @@ def main(config, resume, device, output_path):
     total_metrics = torch.zeros(len(metric_fns))
 
     with torch.no_grad():
-        for batch_idx, sample_batched in enumerate(tqdm(data_loader)):
+        for _, sample_batched in enumerate(tqdm(data_loader)):
             img_scale1 = sample_batched['image'].to(device)
             img_scale2 = F.interpolate(img_scale1.clone(), scale_factor=0.5)
             img_scale3 = F.interpolate(img_scale1.clone(), scale_factor=0.25)
-            trimap = sample_batched['trimap']
-            height, width = img_scale1.shape[2], img_scale2.shape[3]
-            # gt = sample_batched['gt'].to(device)
-            if img_scale1.shape[2] < 1000 and img_scale1.shape[3] < 1000:
-                output = model(img_scale1, img_scale2, img_scale3)
-                # trimap_scaled = trimap / 255.
-                #masked_output = np.where(trimap==0, 0., output.cpu().numpy())
-                #masked_output = np.where(trimap==255, 1., masked_output)
-                #masked_output = torch.from_numpy(masked_output).type(torch.FloatTensor).to(device)
- 
-                img_path = sample_batched['name'][0]
-                filename = os.path.basename(img_path)
-                filename = os.path.join(output_path, filename)
-                try:
-                    os.stat(output_path)
-                except:
-                    os.mkdir(output_path)
+            original_size = sample_batched['size']
 
+            gt = sample_batched['gt'].to(device)
+
+            output = model(img_scale1, img_scale2, img_scale3)
+
+           
+            try:
+                os.stat(output_path)
+            except:
+                os.mkdir(output_path)
+
+            for i in range(len(img_scale1)):
+                filename = os.path.join(output_path, os.path.basename(sample_batched['name'][i]))
+                img_ = img_scale1[i].unsqueeze(0)
+                alpha_ = output[i].unsqueeze(0)
+                matte_img_ = img_ * alpha_
                 save_ = torch.cat((
-                    img_scale1, 
-                    output.repeat(1,3,1,1)), dim=0)
+                    img_, alpha_.repeat(1,3,1,1),
+                    matte_img_ 
+                ), dim=0)
                 save_image(make_grid(save_.cpu(), nrow=3), filename)
-                # computing loss, metrics on test set
-                # loss = loss_fn(output, gt)
-                # batch_size = gt.shape[0]
-                # total_loss += loss.item() * batch_size
-                # for i, metric in enumerate(metric_fns):
-                #     total_metrics[i] += metric(output, gt) * batch_size
+
+            # computing loss, metrics on test set
+            loss = loss_fn(output, gt)
+            batch_size = len(img_scale1)
+            total_loss += loss.item() * batch_size
+            for i, metric in enumerate(metric_fns):
+                total_metrics[i] += metric(output, gt) * batch_size
 
     n_samples = len(data_loader.sampler)
     log = {'loss': total_loss / n_samples}
