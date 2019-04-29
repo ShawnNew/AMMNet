@@ -144,6 +144,7 @@ class carmediaDataset(myDataset):
 
         sample = {
             'name': img_path,
+            'size': (img.height, img.width),
             'image': img,
             'gt': gt,
             'trimap': trimap
