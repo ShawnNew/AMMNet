@@ -10,6 +10,14 @@ Attention Multi-scale Deep Alpha Matting network is a tri-map(side information) 
 ### Adobe Deep Image Matting Dataset
 Follow the instruction [instruction](https://sites.google.com/view/deepimagematting) to contact author for the dataset.
 
+## Data
+I have trained the model using the adobe dataset and provide a pretrained model.
+You can define your customized dataloader based on the files in `data_loader` directory.
+### Dataset
+Write dataset class refer to `data_loader/create_dataset.py`.
+### Dataloader
+Write dataloader class refer to `data_loader/data_loaders.py`.
+
 ## Usage
 ### Train
 ```shell
@@ -19,10 +27,19 @@ $ python train.py -c config.json
 ```shell
 $ python train.py --resume /dir/to/the/saveing/checkpoint -c config.json
 ```
+### Finetune
+Finetune from a pretrained checkpoint.
+```shell
+$ python train.py -r /dir/to/the/checkpoint -c config.json
+```
+
 If you want to visualize during training, run in your terminal:
 ```shell
 $ tensorboard --logdir saved/runs/
 ```
+
+## Test
+Use `test.py` to test your dataset.
 
 ### Results
 
