@@ -76,7 +76,7 @@
     },
     "trainer": {
         "epochs": 1000,
-        "save_dir": "/1/training-log/amsmnet-saved",
+        "save_dir": "/public/training-log/amsmnet-saved",
         "save_period": 1,
         "verbosity": 2,
         
@@ -86,6 +86,6 @@
         "log_step": 4,
         
         "tensorboardX": true,
-        "log_dir": "/1/training-log/amsmnet-saved/runs"
+        "log_dir": "/public/training-log/amsmnet-saved/runs"
     }
 }
