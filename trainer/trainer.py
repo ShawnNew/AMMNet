@@ -24,6 +24,7 @@ class Trainer(BaseTrainer):
         self.alpha_loss_weight = self.config['alpha_loss_weight']
         self.comp_loss_weight = self.config['comp_loss_weight']
         self.content_loss_weight = self.config['content_loss_weight']
+        self.regularization = self.config['regularization']
 
     def _eval_metrics(self, output, target):
         acc_metrics = np.zeros(len(self.metrics))
@@ -78,6 +79,18 @@ class Trainer(BaseTrainer):
             ## overall loss
             alpha_loss_ = self.loss(output, gt) * self.alpha_loss_weight
             loss = alpha_loss_ + comp_loss_ + content_loss_
+
+            ## regularization
+            reg_loss = None
+            for param in self.model.parameters():
+                if reg_loss is None:
+                    reg_loss = 0.5 * torch.sum(param**2)
+                else:
+                    reg_loss = reg_loss + 0.5 * param.norm(2)**2
+
+            loss += self.regularization * reg_loss
+            
+            ## backprop
             loss.backward()
             self.optimizer.step()
 
