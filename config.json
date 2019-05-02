@@ -63,7 +63,7 @@
     "alpha_loss_weight": 20,
     "comp_loss_weight": 20,
     "content_loss_weight": 0.1,
-    "regularization": 0.9,
+    "regularization": 0.0004,
     "metrics": [
         "mse", "sad"
     ],
