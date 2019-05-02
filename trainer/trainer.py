@@ -80,7 +80,7 @@ class Trainer(BaseTrainer):
             alpha_loss_ = self.loss(output, gt) * self.alpha_loss_weight
             loss = alpha_loss_ + comp_loss_ + content_loss_
 
-            ## regularization
+            ## l2 regularization
             reg_loss = None
             for param in self.model.parameters():
                 if reg_loss is None:
