@@ -3,8 +3,11 @@ Attention Multi-scale Deep Alpha Matting network is a tri-map(side information) 
 
 ## Dependencies
 * NumPy
+* torch
+* torchvision
 * pytorch
 * OpenCV
+* tensorboardX
 
 ## Dataset
 ### Adobe Deep Image Matting Dataset
@@ -12,7 +15,7 @@ Follow the instruction [instruction](https://sites.google.com/view/deepimagematt
 
 ## Data
 I have trained the model using the adobe dataset and provide a pretrained model.
-You can define your customized dataloader based on the files in `data_loader` directory.
+You **have to** define your customized dataloader based on the files in `data_loader` directory.
 ### Dataset
 Write dataset class refer to `data_loader/create_dataset.py`.
 ### Dataloader
@@ -30,7 +33,7 @@ $ python train.py --resume /dir/to/the/saveing/checkpoint -c config.json
 ### Finetune
 Finetune from a pretrained checkpoint.
 ```shell
-$ python train.py -r /dir/to/the/checkpoint -c config.json
+$ python train.py -f ./pretrained.pth -c config.json
 ```
 
 If you want to visualize during training, run in your terminal:
