@@ -78,7 +78,6 @@ class Trainer(BaseTrainer):
 
             ## overall loss
             alpha_loss_ = self.loss(output, gt) * self.alpha_loss_weight
-            loss = alpha_loss_ + comp_loss_ + content_loss_
 
             ## l2 regularization
             reg_loss = None
@@ -87,8 +86,9 @@ class Trainer(BaseTrainer):
                     reg_loss = 0.5 * torch.sum(param**2)
                 else:
                     reg_loss = reg_loss + 0.5 * param.norm(2)**2
-
-            loss += self.regularization * reg_loss
+            
+            loss = alpha_loss_ + comp_loss_ + content_loss_ +\
+                    self.regularization * reg_loss
             
             ## backprop
             loss.backward()
