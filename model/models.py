@@ -9,7 +9,7 @@ class MSMNetModel(BaseModel):
         # -------------- Define multi-scale model architecture here ------------
         # scale = 3
         input_channles = kwargs['input_channels']
-        num_resblocks = kwargs['num_resblocks']
+        num_resblocks = kwargs['num_ms_resblocks']
         intermediate_channels = kwargs['intermediate_channels']
         kernel_size = kwargs['default_kernel_size']
         activation = nn.ReLU(True)
@@ -173,7 +173,7 @@ class AttentionModel(BaseModel):
 class FusionModel(BaseModel):
     def __init__(self, conv=common.default_conv, **kwargs):
         super(FusionModel, self).__init__()
-        num_resblocks = kwargs['num_resblocks']
+        num_resblocks = kwargs['num_fusion_resblocks']
         intermediate_channels = kwargs['intermediate_channels']
         res_block = [
                 common.ResBlock(conv, intermediate_channels, 3, bn=True) for _ in range(num_resblocks)

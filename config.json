@@ -7,7 +7,8 @@
         "args": {
             "input_channels": 3,
             "intermediate_channels": 64,
-            "num_resblocks": 6,
+            "num_ms_resblocks": 6,
+            "num_fusion_resblocks": 6,
             "default_kernel_size": 3,
             "rgb_range": 255,
             "attention_input_channels": 3,
