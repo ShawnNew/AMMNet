@@ -16,8 +16,8 @@ import torch.nn.functional as F
 
 def main(config, resume, device, output_path):
     # setup data_loader instances
-    data_loader = getattr(module_data, config['carmedia_data_loader']['type'])(
-        config['carmedia_data_loader']['args']['data_dir'],
+    data_loader = getattr(module_data, config['adobe_data_loader']['type'])(
+        config['adobe_data_loader']['args']['data_dir'],
         batch_size=32,
         shuffle=False,
         validation_split=0.0,

@@ -1,6 +1,6 @@
 {
     "name": "AMSMNet",
-    "n_gpu": 4,
+    "n_gpu": 1,
     
     "arch": {
         "type": "AMSMNetModel",
@@ -17,8 +17,8 @@
     "adobe_data_loader": {
         "type": "AMSMNetDataLoader",
         "args":{
-            "data_dir": "/1/Datasets/adobe",
-            "batch_size": 8,
+            "data_dir": "/public/adobe",
+            "batch_size": 1,
             "shuffle": true,
             "validation_split": 0.01,
             "num_workers": 2
@@ -76,7 +76,7 @@
     },
     "trainer": {
         "epochs": 1000,
-        "save_dir": "/1/training-log/amsmnet-saved",
+        "save_dir": "/home/niuc/amsmnet-saved",
         "save_period": 1,
         "verbosity": 2,
         
@@ -86,6 +86,6 @@
         "log_step": 4,
         
         "tensorboardX": true,
-        "log_dir": "/1/training-log/amsmnet-saved/runs"
+        "log_dir": "/home/niuc/amsmnet-saved/runs"
     }
 }
