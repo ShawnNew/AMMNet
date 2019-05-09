@@ -35,7 +35,7 @@ def cross_entropy2d(input, target, weight=None, size_average=True):
 class VGG16ContentModel(nn.Module):
     def __init__(self, **kwargs):
         super(VGG16ContentModel, self).__init__()
-        pretrained_model = getattr(models, kwargs['model'])(pretrained=True).features
+        pretrained_model = getattr(models, kwargs['model'])(pretrained=True).features[:10]
         self.weights = kwargs['weights']
         # get certain layers to construct content-loss module
         self.conv1= pretrained_model[:2]  # relu 1
