@@ -7,19 +7,19 @@
         "args": {
             "input_channels": 3,
             "intermediate_channels": 64,
-            "num_ms_resblocks": 12,
-            "num_fusion_resblocks": 6,
+            "num_ms_resblocks": 4,
+            "num_fusion_resblocks": 4,
             "default_kernel_size": 3,
             "rgb_range": 255,
             "attention_input_channels": 3,
-            "dense_growth_rate": 16
+            "dense_growth_rate": 8
         }
     },
     "adobe_data_loader": {
         "type": "AMSMNetDataLoader",
         "args":{
             "data_dir": "/public/adobe",
-            "batch_size": 10,
+            "batch_size": 1,
             "shuffle": true,
             "validation_split": 0.01,
             "num_workers": 2
@@ -48,7 +48,7 @@
     "optimizer": {
         "type": "Adam",
         "args":{
-            "lr": 0.00001,
+            "lr": 0.0001,
             "weight_decay": 0,
             "amsgrad": true
         }

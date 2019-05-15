@@ -13,20 +13,21 @@ import model.model as module_arch
 from train import get_instance
 import logging
 import os
-from utils.util import (convert_to_grayscale,
-                            save_gradient_images,
-                            get_positive_negative_saliency)
+from torchvision.utils import make_grid, save_image
+# from utils.util import (convert_to_grayscale,
+#                             save_gradient_images,
+#                             get_positive_negative_saliency)
 
 
 class GuidedBackprop():
-    def __init__(self, model, loss, content_loss, metrics, resume, config,data_loader):
+    def __init__(self, model, loss, content_loss, metrics, resume, config):
         self.config = config    # get configuration file
         self.logger = logging.getLogger(self.__class__.__name__) # get log
         self.device, device_ids = self._prepare_device(0) # get gpu devices
         # get model, loss, metrics, content_loss stuff
         self.loss = loss
         self.metrics = metrics
-        self.data_loader = data_loader
+        # self.data_loader = data_loader
         # put necessary part to GPU or CPU? based on what device you get available
         self.model = model.to(self.device)
         self.content_loss = content_loss.to(self.device)
@@ -43,8 +44,6 @@ class GuidedBackprop():
         self.gradients_ms = None
         self.gradients_fused = None
         self.hook_layers()
-        import pdb
-        pdb.set_trace()
         self._resume_checkpoint(resume)
 
 
@@ -64,7 +63,7 @@ class GuidedBackprop():
         at_last_layer.register_backward_hook(hook_at_function)
         fused_last_layer.register_backward_hook(hook_gradients_fused)
 
-    def generate_gradients(self, idx):
+    def generate_gradients(self, input_img, gt):
         """
         Training logic for an epoch
 
@@ -81,14 +80,18 @@ class GuidedBackprop():
             The metrics in log must have the key 'metrics'.
         """
         self.model.eval()
-    
-        img_scale1 = self.data_loader.dataset[idx]['image'].to(self.device)
+        # dl_iter = iter(self.data_loader)
+        # sample = next(dl_iter)
+
+        # img_scale1 = sample['image'].to(self.device)
+        img_scale1 = input_img.to(self.device)
         img_scale2 = F.interpolate(img_scale1.clone(), scale_factor=0.5)
         img_scale3 = F.interpolate(img_scale1.clone(), scale_factor=0.25)
 
-        gt = self.data_loader.dataset[idx]['gt'].to(self.device)
-            
+        gt = gt.to(self.device)
+        # name_ = sample['name'][0]
         self.model.zero_grad()
+
         output = self.model(img_scale1, img_scale2, img_scale3)
         ## content loss
         pred_object = img_scale1 * output
@@ -108,11 +111,9 @@ class GuidedBackprop():
         
         ## backprop
         loss.backward()
-        import pdb
-        pdb.set_trace()
-        gradient_ms_arr = self.gradients_ms.data.numpy()
-        gradient_at_arr = self.gradients_at.data.numpy()
-        gradient_fused_arr = self.gradients_fused.data.numpy()
+        gradient_ms_arr = self.gradients_ms.data[0].unsqueeze(1)
+        gradient_at_arr = self.gradients_at.data[0].unsqueeze(1)
+        gradient_fused_arr = self.gradients_fused[0].unsqueeze(1)
 
         return [gradient_ms_arr, gradient_at_arr, gradient_fused_arr]
 
@@ -156,6 +157,23 @@ class GuidedBackprop():
         list_ids = list(range(n_gpu_use))
         return device, list_ids
 
+def save_gradient_images(gradient, file_name):
+    """
+        Exports the original gradient image
+
+    Args:
+        gradient (np arr): Numpy array of the gradient with shape (3, 224, 224)
+        file_name (str): File name to be exported
+    """
+    if not os.path.exists('results'):
+        os.makedirs('results')
+    # Normalize
+    gradient = gradient - gradient.min()
+    gradient /= gradient.max()
+    # # Save image
+    path_to_file = os.path.join('results', file_name + '.png')
+    save_image(gradient, path_to_file)
+
 
 def main(config, resume=None):
     # train_logger = Logger()
@@ -165,9 +183,24 @@ def main(config, resume=None):
     content_loss = get_instance(module_loss, 'content_loss', config)
     metrics = [getattr(module_metric, met) for met in config['metrics']]
 
-    BGP = GuidedBackprop(model, loss, content_loss, metrics, resume, config, data_loader)
+    BGP = GuidedBackprop(model, loss, content_loss, metrics, resume, config)
 
-    gradient_list_ = BGP.generate_gradients(10)
+    dl_iter = iter(data_loader)
+    sample = next(dl_iter)
+    img_scale1 = sample['image']
+    gt = sample['gt']
+    name = sample['name'][0]
+
+    gradient_list_ = BGP.generate_gradients(img_scale1, gt)
+    base_fn = os.path.splitext(os.path.basename(name))[0]
+    grid_ms = make_grid(gradient_list_[0], nrow=8)
+    grid_at = make_grid(gradient_list_[1], nrow=8)
+    grid_fused = make_grid(gradient_list_[2], nrow=8)
+    save_gradient_images(grid_ms, base_fn+'ms')
+    save_gradient_images(grid_at, base_fn+'at')
+    save_gradient_images(grid_fused, base_fn+'fused')
+    print('Gradient saved')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch Template')
