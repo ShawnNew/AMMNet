@@ -1,25 +1,25 @@
 {
     "name": "AMSMNet",
-    "n_gpu": 1,
+    "n_gpu": 4,
     
     "arch": {
         "type": "AMSMNetModel",
         "args": {
             "input_channels": 3,
             "intermediate_channels": 64,
-            "num_ms_resblocks": 6,
+            "num_ms_resblocks": 12,
             "num_fusion_resblocks": 6,
             "default_kernel_size": 3,
             "rgb_range": 255,
             "attention_input_channels": 3,
-            "dense_growth_rate": 8
+            "dense_growth_rate": 16
         }
     },
     "adobe_data_loader": {
         "type": "AMSMNetDataLoader",
         "args":{
             "data_dir": "/public/adobe",
-            "batch_size": 1,
+            "batch_size": 10,
             "shuffle": true,
             "validation_split": 0.01,
             "num_workers": 2
@@ -77,7 +77,7 @@
     },
     "trainer": {
         "epochs": 1000,
-        "save_dir": "/home/niuc/amsmnet-saved",
+        "save_dir": "/home/niuc/amsmnet-log",
         "save_period": 1,
         "verbosity": 2,
         
@@ -87,6 +87,6 @@
         "log_step": 4,
         
         "tensorboardX": true,
-        "log_dir": "/home/niuc/amsmnet-saved/runs"
+        "log_dir": "/home/niuc/amsmnet-log/runs"
     }
 }
