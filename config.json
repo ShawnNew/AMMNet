@@ -1,25 +1,24 @@
 {
     "name": "AMSMNet",
     "n_gpu": 4,
-    
     "arch": {
         "type": "AMSMNetModel",
         "args": {
             "input_channels": 3,
             "intermediate_channels": 64,
-            "num_ms_resblocks": 12,
-            "num_fusion_resblocks": 6,
+            "num_ms_resblocks": 4,
+            "num_fusion_resblocks": 4,
             "default_kernel_size": 3,
             "rgb_range": 255,
             "attention_input_channels": 3,
-            "dense_growth_rate": 16
+            "dense_growth_rate": 8
         }
     },
     "adobe_data_loader": {
         "type": "AMSMNetDataLoader",
-        "args":{
+        "args": {
             "data_dir": "/public/adobe",
-            "batch_size": 10,
+            "batch_size": 8,
             "shuffle": true,
             "validation_split": 0.01,
             "num_workers": 2
@@ -35,9 +34,9 @@
             "num_workers": 1
         }
     },
-    "carmedia_data_loader":{
-        "type":"AMSMNetCarMediaDataLoader",
-        "args":{
+    "carmedia_data_loader": {
+        "type": "AMSMNetCarMediaDataLoader",
+        "args": {
             "data_dir": "/public/car-media",
             "batch_size": 4,
             "shuffle": true,
@@ -47,8 +46,8 @@
     },
     "optimizer": {
         "type": "Adam",
-        "args":{
-            "lr": 0.00001,
+        "args": {
+            "lr": 0.0001,
             "weight_decay": 0,
             "amsgrad": true
         }
@@ -58,7 +57,12 @@
         "type": "VGG16ContentModel",
         "args": {
             "model": "vgg16",
-            "weights": [0.25, 0.25, 0.25, 0.25]
+            "weights": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+            ]
         }
     },
     "alpha_loss_weight": 20,
@@ -66,7 +70,8 @@
     "content_loss_weight": 0.1,
     "regularization": 0.0004,
     "metrics": [
-        "mse", "sad"
+        "mse",
+        "sad"
     ],
     "lr_scheduler": {
         "type": "StepLR",
@@ -80,12 +85,9 @@
         "save_dir": "/home/niuc/amsmnet-log",
         "save_period": 1,
         "verbosity": 2,
-        
         "monitor": "min val_loss",
         "early_stop": 10,
-
         "log_step": 4,
-        
         "tensorboardX": true,
         "log_dir": "/home/niuc/amsmnet-log/runs"
     }
