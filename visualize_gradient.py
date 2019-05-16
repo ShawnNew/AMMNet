@@ -40,7 +40,6 @@ class GuidedBackprop():
         self.content_loss_weight = self.config['content_loss_weight']
         
         # variables to store hooked gradients
-        self.gradients_at = None
         self.gradients_ms = None
         self.gradients_fused = None
         self.hook_layers()
@@ -50,17 +49,13 @@ class GuidedBackprop():
     def hook_layers(self):
         def hook_ms_function(module, grad_in, grad_out):
             self.gradients_ms = grad_out[0]
-        def hook_at_function(module, grad_in, grad_out):
-            self.gradients_at = grad_out[0]
         def hook_gradients_fused(module, grad_in, grad_out):
             self.gradients_fused = grad_out[0]
 
         ms_last_layer = list(self.model.msmnet_model.output._modules.items())[0][1][-1]
-        at_last_layer = self.model.attention_model.attention_conv_tail[1][-1]
         fused_last_layer = self.model.fusion_model._modules['fusion_model'][-1][-1]
 
         ms_last_layer.register_backward_hook(hook_ms_function)
-        at_last_layer.register_backward_hook(hook_at_function)
         fused_last_layer.register_backward_hook(hook_gradients_fused)
 
     def generate_gradients(self, input_img, gt):
@@ -80,42 +75,40 @@ class GuidedBackprop():
             The metrics in log must have the key 'metrics'.
         """
         self.model.eval()
-        # dl_iter = iter(self.data_loader)
-        # sample = next(dl_iter)
 
-        # img_scale1 = sample['image'].to(self.device)
         img_scale1 = input_img.to(self.device)
         img_scale2 = F.interpolate(img_scale1.clone(), scale_factor=0.5)
         img_scale3 = F.interpolate(img_scale1.clone(), scale_factor=0.25)
 
         gt = gt.to(self.device)
-        # name_ = sample['name'][0]
         self.model.zero_grad()
 
-        output = self.model(img_scale1, img_scale2, img_scale3)
+        output, ms_output, at_output = self.model(img_scale1, img_scale2, img_scale3)
         ## content loss
-        pred_object = img_scale1 * output
-        gt_object = img_scale1 * gt
-        content_loss_ = self.content_loss(pred_object, gt_object) *\
-                        self.content_loss_weight
+        # pred_object = img_scale1 * output
+        # gt_object = img_scale1 * gt
+        # content_loss_ = self.content_loss(pred_object, gt_object) *\
+        #                 self.content_loss_weight
         ## comp loss
-        fg = img_scale1 * gt
-        bg = img_scale1 * (1-gt)
-        color_pred = output * fg + (1-output) * bg
-        comp_loss_ = self.loss(color_pred, img_scale1) * self.comp_loss_weight
+        # fg = img_scale1 * gt
+        # bg = img_scale1 * (1-gt)
+        # color_pred = output * fg + (1-output) * bg
+        # comp_loss_ = self.loss(color_pred, img_scale1) * self.comp_loss_weight
 
         ## overall loss
-        alpha_loss_ = self.loss(output, gt) * self.alpha_loss_weight
+        alpha_loss_ = self.loss(output, gt)# * self.alpha_loss_weight
         
-        loss = alpha_loss_ + comp_loss_ + content_loss_
+        loss = alpha_loss_ #+ comp_loss_ + content_loss_
         
         ## backprop
         loss.backward()
         gradient_ms_arr = self.gradients_ms.data[0].unsqueeze(1)
-        gradient_at_arr = self.gradients_at.data[0].unsqueeze(1)
+        # gradient_at_arr = self.gradients_at.data[0].unsqueeze(1)
         gradient_fused_arr = self.gradients_fused[0].unsqueeze(1)
+        forward_ms_arr = ms_output[0].unsqueeze(1)
+        forward_at_arr = at_output[0].unsqueeze(1)
 
-        return [gradient_ms_arr, gradient_at_arr, gradient_fused_arr]
+        return [gradient_ms_arr, gradient_fused_arr, forward_ms_arr, forward_at_arr]
 
 
     def _resume_checkpoint(self, resume_path, finetune=False):
@@ -193,12 +186,17 @@ def main(config, resume=None):
 
     gradient_list_ = BGP.generate_gradients(img_scale1, gt)
     base_fn = os.path.splitext(os.path.basename(name))[0]
-    grid_ms = make_grid(gradient_list_[0], nrow=8)
-    grid_at = make_grid(gradient_list_[1], nrow=8)
-    grid_fused = make_grid(gradient_list_[2], nrow=8)
+    grid_ms = make_grid(gradient_list_[0], nrow=8, normalize=True)
+    grid_fused = make_grid(gradient_list_[1], nrow=8, normalize=True)
+    grid_forward_ms = make_grid(gradient_list_[2], nrow=8, normalize=True)
+    grid_forward_at = make_grid(gradient_list_[3], nrow=8, normalize=True)
     save_gradient_images(grid_ms, base_fn+'ms')
-    save_gradient_images(grid_at, base_fn+'at')
     save_gradient_images(grid_fused, base_fn+'fused')
+    save_image(grid_forward_ms, \
+        os.path.join('results', base_fn+'forward_ms.png'))
+    save_image(grid_forward_at, \
+        os.path.join('results', base_fn+'forward_at.png'))
+
     print('Gradient saved')
 
 

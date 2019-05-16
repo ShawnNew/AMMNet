@@ -19,4 +19,4 @@ class AMSMNetModel(BaseModel):
         output = ms_output * attention_output
         output = self.fusion_model(output)
 
-        return output
+        return output, ms_output, attention_output
