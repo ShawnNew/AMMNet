@@ -179,7 +179,7 @@ class FusionModel(BaseModel):
                 common.ResBlock(conv, intermediate_channels, 3, bn=True) for _ in range(num_resblocks)
                 ]
         fusion_model = nn.ModuleList([
-                common.BasicBlock(conv, intermediate_channels, intermediate_channels, 3),
+                common.BasicBlock(conv, 2*intermediate_channels, intermediate_channels, 3),
                 nn.Sequential(*res_block),
                 common.BasicBlock(conv, intermediate_channels, 1, 3, act=nn.Sigmoid())
                 ])
