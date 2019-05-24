@@ -2,7 +2,7 @@ from torchvision import transforms
 from base import BaseDataLoader
 from .create_dataset import adobeDataset, alphamatting, carmediaDataset
 from .preprocessor.utils import MultiRescale, RandomCrop, MultiToTensor
-
+from . import human_dataset
 
 
 class AMSMNetDataLoader(BaseDataLoader):
@@ -65,4 +65,10 @@ class AMSMNetCarMediaDataLoader(BaseDataLoader):
         self.dataset = carmediaDataset(self.data_dir, train=training, transform=trsfm, shuffle=False)
         super(AMSMNetCarMediaDataLoader, self).__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
 
+
+class HumanDataLoader(BaseDataLoader):
+    def __init__(self, data_dir, batch_size, shuffle, validation_split, num_workers, training=True):
+        self.data_dir = data_dir
+        self.dataset = human_dataset.human_matting_data(self.data_dir, 320)
+        super(HumanDataLoader, self).__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
 
