@@ -1,13 +1,13 @@
 {
     "name": "AMSMNet",
-    "n_gpu": 4,
+    "n_gpu": 3,
     "arch": {
         "type": "AMSMNetModel",
         "args": {
             "input_channels": 3,
             "intermediate_channels": 64,
-            "num_ms_resblocks": 4,
-            "num_fusion_resblocks": 4,
+            "num_ms_resblocks": 2,
+            "num_fusion_resblocks": 2,
             "default_kernel_size": 3,
             "rgb_range": 255,
             "attention_input_channels": 3,
@@ -18,7 +18,7 @@
         "type": "AMSMNetDataLoader",
         "args": {
             "data_dir": "/public/adobe",
-            "batch_size": 8,
+            "batch_size": 16,
             "shuffle": true,
             "validation_split": 0.01,
             "num_workers": 2
@@ -44,11 +44,21 @@
             "num_workers": 1
         }
     },
+    "human_data_loader":{
+        "type": "HumanDataLoader",
+        "args": {
+            "data_dir": "/public/DAPM-Dataset",
+            "batch_size": 8,
+            "shuffle": true,
+            "validation_split": 0.01,
+            "num_workers": 1
+        }
+    },
     "optimizer": {
         "type": "Adam",
         "args": {
             "lr": 0.0001,
-            "weight_decay": 0,
+            "weight_decay": 0.0004,
             "amsgrad": true
         }
     },
@@ -68,7 +78,6 @@
     "alpha_loss_weight": 20,
     "comp_loss_weight": 20,
     "content_loss_weight": 0.1,
-    "regularization": 0.0004,
     "metrics": [
         "mse",
         "sad"
@@ -81,12 +90,12 @@
         }
     },
     "trainer": {
-        "epochs": 1000,
+        "epochs": 200,
         "save_dir": "/home/niuc/amsmnet-log",
         "save_period": 1,
         "verbosity": 2,
         "monitor": "min val_loss",
-        "early_stop": 10,
+        "early_stop": 100,
         "log_step": 4,
         "tensorboardX": true,
         "log_dir": "/home/niuc/amsmnet-log/runs"
