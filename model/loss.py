@@ -18,18 +18,16 @@ def gradient_loss(pred, gradient, target):
     loss_ = torch.mean((diff_**2) * gradient)
     return loss_
 
-def cross_entropy2d(input, target, weight=None, size_average=True):
-    n, c, h, w = input.size()
-    nt, ct, ht, wt = target.size()
-    # Handle inconsistent size between input and target
-    if h != ht and w != wt:  # upsample labels
-        input = F.interpolate(input, size=(ht, wt), mode="bilinear", align_corners=True)
+def CrossEntropyLoss2d(inputs, targets, weight=None):
+    n, c, h, w = inputs.size()
+    log_p = F.log_softmax(inputs, dim=1)
+    log_p = log_p.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c) #(n*h*w, c)
+    log_p = log_p[targets.view(n*h*w, 1).repeat(1, c) >= 0]
+    log_p = log_p.view(-1, c)
 
-    input = input.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
-    target = target.view(-1)
-    loss = F.cross_entropy(
-            input, target, weight=weight, size_average=size_average, ignore_index=250
-        )
+    mask = targets >= 0
+    targets = targets[mask]
+    loss = F.nll_loss(log_p, targets, weight=weight)
     return loss
 
 class VGG16ContentModel(nn.Module):

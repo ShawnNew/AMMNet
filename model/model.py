@@ -3,6 +3,7 @@ import torch.nn as nn
 from base import BaseModel
 from model import common
 from model.models import MSMNetModel, AttentionModel, FusionModel
+from model.fcn8s import FCN8s
 
 
 class AMSMNetModel(BaseModel):
@@ -20,3 +21,18 @@ class AMSMNetModel(BaseModel):
         output = self.fusion_model(output)
 
         return output
+
+class FCN8sModel(BaseModel):
+    def __init__(self, **kwargs):
+        super(FCN8sModel, self).__init__()
+        self.n_class = kwargs['n_class']
+        self.model = FCN8s(n_classes=self.n_class)
+        self.sigmoid_output = nn.Sigmoid()
+    
+    def forward(self, x):
+        x = self.model(x)
+        x = self.sigmoid_output(x)
+        return x
+    
+    def init(self):
+        self.model.init()

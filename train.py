@@ -6,7 +6,7 @@ import data_loader.data_loaders as module_data
 import model.loss as module_loss
 import model.metric as module_metric
 import model.model as module_arch
-from trainer import Trainer
+from trainer import AMSMNetTrainer, FCN8sTrainer
 from utils import Logger
 
 
@@ -21,7 +21,7 @@ def main(config, resume=None, finetune=None):
     valid_data_loader = data_loader.split_validation()
 
     # build model architecture
-    model = get_instance(module_arch, 'arch', config)
+    model = get_instance(module_arch, 'arch_fcn8s', config)
     # print(model)
     
     # get function handles of loss and metrics
@@ -29,14 +29,23 @@ def main(config, resume=None, finetune=None):
     metrics = [getattr(module_metric, met) for met in config['metrics']]
 
     # content loss
-    content_loss = get_instance(module_loss, 'content_loss', config)
+    # content_loss = get_instance(module_loss, 'content_loss', config)
 
     # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = get_instance(torch.optim, 'optimizer', config, trainable_params)
     lr_scheduler = get_instance(torch.optim.lr_scheduler, 'lr_scheduler', config, optimizer)
 
-    trainer = Trainer(model, loss, content_loss, metrics, optimizer, 
+    # trainer = AMSMNetTrainer(model, loss, content_loss, metrics, optimizer, 
+    #                   resume=resume,
+    #                   finetune=finetune,
+    #                   config=config,
+    #                   data_loader=data_loader,
+    #                   valid_data_loader=valid_data_loader,
+    #                   lr_scheduler=lr_scheduler,
+    #                   train_logger=train_logger)
+
+    trainer = FCN8sTrainer(model, loss, metrics, optimizer, 
                       resume=resume,
                       finetune=finetune,
                       config=config,

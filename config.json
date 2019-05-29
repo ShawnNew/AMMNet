@@ -1,7 +1,7 @@
 {
     "name": "AMSMNet",
     "n_gpu": 3,
-    "arch": {
+    "arch_amsmnet": {
         "type": "AMSMNetModel",
         "args": {
             "input_channels": 3,
@@ -14,11 +14,17 @@
             "dense_growth_rate": 8
         }
     },
+    "arch_fcn8s": {
+        "type": "FCN8sModel",
+        "args": {
+            "n_class": 1
+        }
+    },
     "adobe_data_loader": {
         "type": "AMSMNetDataLoader",
         "args": {
             "data_dir": "/public/adobe",
-            "batch_size": 16,
+            "batch_size": 24,
             "shuffle": true,
             "validation_split": 0.01,
             "num_workers": 2
@@ -75,8 +81,8 @@
             ]
         }
     },
-    "alpha_loss_weight": 20,
-    "comp_loss_weight": 20,
+    "alpha_loss_weight": 0.5,
+    "comp_loss_weight": 0.5,
     "content_loss_weight": 0.1,
     "metrics": [
         "mse",
