@@ -17,7 +17,7 @@ def main(config, resume=None, finetune=None):
     train_logger = Logger()
 
     # setup data_loader instances
-    data_loader = get_instance(module_data, 'adobe_data_loader', config)
+    data_loader = get_instance(module_data, 'carmedia_data_loader', config)
     valid_data_loader = data_loader.split_validation()
 
     # build model architecture

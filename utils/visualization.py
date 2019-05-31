@@ -1,4 +1,7 @@
 import importlib
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
 
 
 class WriterTensorboardX():
@@ -41,3 +44,30 @@ class WriterTensorboardX():
             except AttributeError:
                 raise AttributeError("type object 'WriterTensorboardX' has no attribute '{}'".format(name))
             return attr
+
+
+def decode_segmap(temp, n_classes):
+    
+    label_colours = np.asarray([
+        [0,0,0],
+        [128,128,128],
+        [255,255,255]
+        ])
+    rgb = np.zeros((temp.shape[0], 3, temp.shape[1], temp.shape[2]))
+    # decode_list = []
+    for i in range(len(temp)):
+        img = temp[i]
+        r = img.copy()
+        g = img.copy()
+        b = img.copy()
+        for l in range(0, n_classes):
+            r[img == l] = label_colours[l, 0]
+            g[img == l] = label_colours[l, 1]
+            b[img == l] = label_colours[l, 2]
+        
+        rgb[i, 0, :, :] = r
+        rgb[i, 1, :, :] = g
+        rgb[i, 2, :, :] = b
+
+
+    return rgb

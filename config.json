@@ -17,7 +17,7 @@
     "arch_fcn8s": {
         "type": "FCN8sModel",
         "args": {
-            "n_class": 1
+            "n_class": 3
         }
     },
     "adobe_data_loader": {
@@ -68,7 +68,7 @@
             "amsgrad": true
         }
     },
-    "loss": "smooth_l1_loss",
+    "loss": "CrossEntropyLoss2d",
     "content_loss": {
         "type": "VGG16ContentModel",
         "args": {
@@ -85,8 +85,7 @@
     "comp_loss_weight": 0.5,
     "content_loss_weight": 0.1,
     "metrics": [
-        "mse",
-        "sad"
+        "scores"
     ],
     "lr_scheduler": {
         "type": "StepLR",

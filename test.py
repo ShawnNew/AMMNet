@@ -12,29 +12,45 @@ from PIL import Image
 from scipy.misc import imresize
 import numpy as np
 import torch.nn.functional as F
+import cv2
+import time
+from utils.visualization import decode_segmap
 
 
-def main(config, resume, device, output_path):
+def main(config, args):
+    # output_path = os.path.join(os.getcwd(), 'output-human')
+    output_path = '/public/car-media-2/trimap-FCN8s'
+    try:
+        os.stat(output_path)
+    except:
+        os.mkdir(output_path)
+    test_list_file = args.testList
+    test_list = []
+    test_dir = os.path.split(test_list_file)[0]
+    test_dir = os.path.join(test_dir, 'pic')
+    with open(test_list_file, 'r') as f:
+       test_list = f.readlines()
+            
     # setup data_loader instances
-    data_loader = getattr(module_data, config['adobe_data_loader']['type'])(
-        config['adobe_data_loader']['args']['data_dir'],
-        batch_size=32,
-        shuffle=False,
-        validation_split=0.0,
-        training=False,
-        num_workers=4
-    )
+    # data_loader = getattr(module_data, config['adobe_data_loader']['type'])(
+    #     config['adobe_data_loader']['args']['data_dir'],
+    #     batch_size=1,
+    #     shuffle=False,
+    #     validation_split=0.0,
+    #     training=False,
+    #     num_workers=4
+    # )
     #f = open(images)
     ## build model architecture
-    model = get_instance(module_arch, 'arch', config)
+    model = get_instance(module_arch, 'arch_fcn8s', config)
     model.summary()
 
     # get function handles of loss and metrics
-    loss_fn = getattr(module_loss, config['loss'])
-    metric_fns = [getattr(module_metric, met) for met in ["mse", "sad"]]
+    # loss_fn = getattr(module_loss, config['loss'])
+    # metric_fns = [getattr(module_metric, met) for met in ["mse", "sad"]]
 
     # load state dict
-    checkpoint = torch.load(resume)
+    checkpoint = torch.load(args.resume)
     state_dict = checkpoint['state_dict']
     if config['n_gpu'] > 1:
         model = torch.nn.DataParallel(model)
@@ -45,67 +61,95 @@ def main(config, resume, device, output_path):
     model = model.to(device)
     model.eval()
 
-    total_loss = 0.0
-    total_metrics = torch.zeros(len(metric_fns))
+    # total_loss = 0.0
+    # total_metrics = torch.zeros(len(metric_fns))
 
     with torch.no_grad():
-        for _, sample_batched in enumerate(tqdm(data_loader)):
-            img_scale1 = sample_batched['image'].to(device)
-            img_scale2 = F.interpolate(img_scale1.clone(), scale_factor=0.5)
-            img_scale3 = F.interpolate(img_scale1.clone(), scale_factor=0.25)
-            original_size = sample_batched['size']
+        # for i, sample_batched in enumerate(data_loader):
+        for item in test_list:
+            name_ = item.strip()
+            img_path = os.path.join(test_dir, name_)
+            #img_path = sample.strip().split(' ')[0]
+            #name_ = os.path.basename(img_path)
+            output_file_path = os.path.join(output_path, name_)
+            img = Image.open(img_path)
+            original_size = (img.height, img.width)
+            img_scale1 = torch.from_numpy(
+               np.transpose(imresize(img, (320, 320)), (2,0,1)) / 255.
+               ).type(torch.FloatTensor).unsqueeze(0)
+            #img_scale1 = img_scale1.to(device)
+            #img_scale2 = F.interpolate(img_scale1.clone(), scale_factor=0.5)
+            #img_scale3 = F.interpolate(img_scale1.clone(), scale_factor=0.25)
+            # img_scale1 = sample_batched['image'].to(device)
+            #img_scale2 = F.interpolate(img_scale1.clone(), scale_factor=0.5)
+            #img_scale3 = F.interpolate(img_scale1.clone(), scale_factor=0.25)
+            # original_size = sample_batched['size']
 
-            gt = sample_batched['gt'].to(device)
-
-            output = model(img_scale1, img_scale2, img_scale3)
-
+            # gt = sample_batched['gt'].to(device)
+            t0 = time.time()
+            output = model(img_scale1)
+            print(time.time() - t0)
+            pred = output.data.max(1)[1].cpu().numpy()
+            decoded = decode_segmap(pred, 3)
+            decoded = np.transpose(decoded[0], (1,2,0))
+            decoded = cv2.resize(decoded, (original_size[1], original_size[0]),\
+                interpolation=cv2.INTER_CUBIC)
+            # output_file_path = os.path.join(output_path, \
+            #                 os.path.basename(sample_batched['name'][0]))
+            cv2.imwrite(output_file_path, decoded)
            
-            try:
-                os.stat(output_path)
-            except:
-                os.mkdir(output_path)
+            
 
-            for i in range(len(img_scale1)):
-                filename = os.path.join(output_path, os.path.basename(sample_batched['name'][i]))
+            # alpha_pred = output[0,0,:,:].cpu().data.numpy()
+            #alpha_pred = np.where(
+            #    alpha_pred < 0.15, 
+            #    0.,
+            #    alpha_pred
+            #)
+            #alpha_pred = np.where(
+            #    alpha_pred > 0.95,
+            #    1.,
+            #    alpha_pred
+            #)
+            # output_file_path = os.path.join(output_path, \
+            #                     os.path.basename(sample_batched['name'][0]))
+            # alpha_pred = cv2.resize(alpha_pred, (original_size[1], original_size[0]),\
+            #     interpolation=cv2.INTER_CUBIC)
+            # cv2.imwrite(output_file_path, alpha_pred*255.)
 
-                img_ = img_scale1[i].unsqueeze(0).cpu()
-                alpha_ = output[i].unsqueeze(0).cpu()
-                alpha_ = torch.where(
-                    alpha_ < 0.1, 
-                    torch.tensor(0.0), 
-                    alpha_)
-                matte_img_ = img_ * alpha_
-                save_ = torch.cat((
-                    img_, alpha_.repeat(1,3,1,1),
-                    matte_img_ 
-                ), dim=0)
-                save_image(make_grid(save_, nrow=3), filename)
+            # for i in range(len(img_scale1)):
+            #     filename = os.path.join(output_path, os.path.basename(sample_batched['name'][i]))
+            #     size_ = (original_size[1][i].item(), original_size[0][i].item())
 
-            # computing loss, metrics on test set
-            loss = loss_fn(output, gt)
-            batch_size = len(img_scale1)
-            total_loss += loss.item() * batch_size
-            for i, metric in enumerate(metric_fns):
-                total_metrics[i] += metric(output, gt) * batch_size
+            #     alpha_pred = output[i,0,:,:].cpu().data.numpy()
+            #     alpha_pred = cv2.resize(alpha_pred, size_, interpolation=cv2.INTER_CUBIC)
 
-    n_samples = len(data_loader.sampler)
-    log = {'loss': total_loss / n_samples}
-    log.update({met.__name__ : total_metrics[i].item() / n_samples for i, met in enumerate(metric_fns)})
-    print(log)
+            #     # alpha_pred = np.where(
+            #     #     alpha_pred < 0.1, 
+            #     #     0., 
+            #     #     alpha_pred)
+            #     # alpha_pred = np.where(
+            #     #     alpha_pred > 0.95,
+            #     #     1.,
+            #     #     alpha_pred
+            #     # )
+            #     cv2.imwrite(filename, alpha_pred*255.)
+
 
 
 if __name__ == '__main__':
-    output_path = os.path.join(os.getcwd(), 'output')
+    
     parser = argparse.ArgumentParser(description='PyTorch Template')
 
     parser.add_argument('-r', '--resume', default=None, type=str,
                            help='path to latest checkpoint (default: None)')
     parser.add_argument('-d', '--device', default=None, type=str,
                            help='indices of GPUs to enable (default: all)')
+    parser.add_argument('-t', '--testList', type=str, help='specify test dataset list.')
 
     args = parser.parse_args()
 
     if args.resume:
         config = torch.load(args.resume)['config']
 
-    main(config, args.resume, args.device, output_path)
+    main(config, args)

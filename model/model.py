@@ -31,7 +31,7 @@ class FCN8sModel(BaseModel):
     
     def forward(self, x):
         x = self.model(x)
-        x = self.sigmoid_output(x)
+        # x = self.sigmoid_output(x)
         return x
     
     def init(self):
