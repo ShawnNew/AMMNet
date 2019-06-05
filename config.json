@@ -1,13 +1,13 @@
 {
     "name": "AMSMNet",
-    "n_gpu": 3,
-    "arch_amsmnet": {
+    "n_gpu": 4,
+    "arch": {
         "type": "AMSMNetModel",
         "args": {
             "input_channels": 3,
             "intermediate_channels": 64,
-            "num_ms_resblocks": 2,
-            "num_fusion_resblocks": 2,
+            "num_ms_resblocks": 4,
+            "num_fusion_resblocks": 4,
             "default_kernel_size": 3,
             "rgb_range": 255,
             "attention_input_channels": 3,
@@ -24,7 +24,7 @@
         "type": "AMSMNetDataLoader",
         "args": {
             "data_dir": "/public/adobe",
-            "batch_size": 24,
+            "batch_size": 8,
             "shuffle": true,
             "validation_split": 0.01,
             "num_workers": 2
@@ -68,7 +68,7 @@
             "amsgrad": true
         }
     },
-    "loss": "CrossEntropyLoss2d",
+    "loss": "smooth_l1_loss",
     "content_loss": {
         "type": "VGG16ContentModel",
         "args": {
@@ -81,11 +81,11 @@
             ]
         }
     },
-    "alpha_loss_weight": 0.5,
-    "comp_loss_weight": 0.5,
+    "alpha_loss_weight": 20,
+    "comp_loss_weight": 20,
     "content_loss_weight": 0.1,
     "metrics": [
-        "scores"
+        "mse", "sad"
     ],
     "lr_scheduler": {
         "type": "StepLR",
@@ -100,7 +100,7 @@
         "save_period": 1,
         "verbosity": 2,
         "monitor": "min val_loss",
-        "early_stop": 100,
+        "early_stop": 50,
         "log_step": 4,
         "tensorboardX": true,
         "log_dir": "/home/niuc/amsmnet-log/runs"
