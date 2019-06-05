@@ -6,7 +6,7 @@ import data_loader.data_loaders as module_data
 import model.loss as module_loss
 import model.metric as module_metric
 import model.model as module_arch
-from trainer import Trainer
+from trainer import AMSMNetTrainer, FCN8sTrainer
 from utils import Logger
 
 
@@ -36,7 +36,7 @@ def main(config, resume=None, finetune=None):
     optimizer = get_instance(torch.optim, 'optimizer', config, trainable_params)
     lr_scheduler = get_instance(torch.optim.lr_scheduler, 'lr_scheduler', config, optimizer)
 
-    trainer = Trainer(model, loss, content_loss, metrics, optimizer, 
+    trainer = AMSMNetTrainer(model, loss, content_loss, metrics, optimizer, 
                       resume=resume,
                       finetune=finetune,
                       config=config,
@@ -44,6 +44,15 @@ def main(config, resume=None, finetune=None):
                       valid_data_loader=valid_data_loader,
                       lr_scheduler=lr_scheduler,
                       train_logger=train_logger)
+
+    # trainer = FCN8sTrainer(model, loss, metrics, optimizer, 
+    #                   resume=resume,
+    #                   finetune=finetune,
+    #                   config=config,
+    #                   data_loader=data_loader,
+    #                   valid_data_loader=valid_data_loader,
+    #                   lr_scheduler=lr_scheduler,
+    #                   train_logger=train_logger)
 
     trainer.train()
 

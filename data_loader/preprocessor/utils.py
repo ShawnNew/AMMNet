@@ -72,10 +72,11 @@ class RandomCrop(object):
 
 class MultiToTensor(object):
     def __call__(self, sample):
+        mean_ = (114., 121., 134.,)
         def trans(x):
             if x.mode == 'RGB':
                 x = torch.from_numpy(
-                    np.transpose(np.asarray(x), (2,0,1)) / 255.
+                    np.transpose(np.asarray(x)-mean_, (2,0,1)) / 255.
                 ).type(torch.FloatTensor)
             else:
                 x = torch.from_numpy(
