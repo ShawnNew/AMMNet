@@ -20,7 +20,7 @@ from utils.visualization import decode_segmap
 def main(config, args):
     # output_path = os.path.join(os.getcwd(), 'output-human')
     current_dir = os.getcwd()
-    output_path = os.path.join(current_dir, 'output')
+    output_path = os.path.join(current_dir, 'output-concat')
     try:
         os.stat(output_path)
     except:
@@ -34,7 +34,7 @@ def main(config, args):
             
     # setup data_loader instances
     data_loader = getattr(module_data, config['adobe_data_loader']['type'])(
-        "/public/adobe/",
+        "/public/Datasets/DIM-dataset/",
         batch_size=1,
         shuffle=False,
         validation_split=0.0,
