@@ -98,11 +98,11 @@ def main(config, args):
             # output_file_path = os.path.join(output_path, \
             #                 os.path.basename(sample_batched['name'][0]))
             alpha_pred = output[0,0,:,:].data.cpu().numpy()
-            # alpha_pred = np.where(
-            #    alpha_pred < 0.1, 
-            #    0.,
-            #    alpha_pred
-            # )
+            alpha_pred = np.where(
+               alpha_pred < 0.15, 
+               0.,
+               alpha_pred
+            )
             # alpha_pred = np.where(
             #    alpha_pred > 0.9,
             #    1.,

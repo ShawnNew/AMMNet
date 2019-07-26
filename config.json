@@ -1,6 +1,6 @@
 {
     "name": "AMSMNet",
-    "n_gpu": 4,
+    "n_gpu": 2,
     "arch": {
         "type": "AMSMNetModel",
         "args": {
@@ -23,8 +23,8 @@
     "adobe_data_loader": {
         "type": "AMSMNetDataLoader",
         "args": {
-            "data_dir": "/public/adobe",
-            "batch_size": 8,
+            "data_dir": "/public/Datasets/DIM-dataset",
+            "batch_size": 6,
             "shuffle": true,
             "validation_split": 0.01,
             "num_workers": 2
@@ -53,8 +53,8 @@
     "human_data_loader":{
         "type": "HumanDataLoader",
         "args": {
-            "data_dir": "/public/DAPM-Dataset",
-            "batch_size": 8,
+            "data_dir": "/public/Datasets/DAPM-dataset",
+            "batch_size": 6,
             "shuffle": true,
             "validation_split": 0.01,
             "num_workers": 1
@@ -63,7 +63,7 @@
     "optimizer": {
         "type": "Adam",
         "args": {
-            "lr": 0.0001,
+            "lr": 0.00001,
             "weight_decay": 0.0004,
             "amsgrad": true
         }
@@ -96,13 +96,13 @@
     },
     "trainer": {
         "epochs": 200,
-        "save_dir": "/home/niuc/amsmnet-log",
+        "save_dir": "/home/niuc/amsmnet-human-log",
         "save_period": 1,
         "verbosity": 2,
         "monitor": "min val_loss",
         "early_stop": 50,
         "log_step": 4,
         "tensorboardX": true,
-        "log_dir": "/home/niuc/amsmnet-log/runs"
+        "log_dir": "/home/niuc/amsmnet-human-log/runs"
     }
 }
