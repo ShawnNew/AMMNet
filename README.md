@@ -1,5 +1,5 @@
-# AMSMNet
-Attention Multi-scale Deep Alpha Matting network is a tri-map(side information) free deep image matting network.
+# AMMNet
+An Attention-based Multi-scale Matting Network is a tri-map(side information) free deep image matting network.
 
 ## Dependencies
 * NumPy
