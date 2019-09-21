@@ -98,16 +98,16 @@ def main(config, args):
             # output_file_path = os.path.join(output_path, \
             #                 os.path.basename(sample_batched['name'][0]))
             alpha_pred = output[0,0,:,:].data.cpu().numpy()
-            # alpha_pred = np.where(
-            #    alpha_pred < 0.1, 
-            #    0.,
-            #    alpha_pred
-            # )
-            # alpha_pred = np.where(
-            #    alpha_pred > 0.9,
-            #    1.,
-            #    alpha_pred
-            # )
+            alpha_pred = np.where(
+               alpha_pred < 0.1, 
+               0.,
+               alpha_pred
+            )
+            alpha_pred = np.where(
+               alpha_pred > 0.9,
+               1.,
+               alpha_pred
+            )
             alpha_pred = cv2.resize(alpha_pred, (original_size[1], original_size[0]),\
                 interpolation=cv2.INTER_CUBIC)
             cv2.imwrite(output_file_path, alpha_pred*255.)
